@@ -13,14 +13,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="FFME.Windows" Version="4.4.350" />
     <PackageReference Include="Flurl" Version="4.0.0" />
-    <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
     <PackageReference Include="WPF-UI" Version="3.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\" />
-    <Folder Include="Helpers\" />
   </ItemGroup>
 
 </Project>

@@ -20,9 +20,15 @@
     TextOptions.TextFormattingMode="Display"
     TextOptions.TextHintingMode="Animated"
     TextOptions.TextRenderingMode="ClearType"
+    WindowStyle="None"
     mc:Ignorable="d">
 
+    <Window.DataContext>
+        <model:MainWorkModel />
+    </Window.DataContext>
 
-    <Border x:Name="OuterBorder" />
+    <Border x:Name="OuterBorder">
+        <Frame x:Name="ContentFrame" />
+    </Border>
 
 </ui:FluentWindow>
