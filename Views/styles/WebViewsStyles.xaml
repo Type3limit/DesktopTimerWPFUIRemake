@@ -1,0 +1,81 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
+    xmlns:model="[model ]clr-namespace:DesktopTimer.models"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <Style x:Key="WebsiteSubSettingPageStyle" TargetType="ContentControl">
+        <Style.Resources>
+            <DataTemplate DataType="{x:Type def:WallHavenRequest}">
+                <Border>
+                    <ui:DynamicScrollViewer>
+                        <StackPanel Orientation="Vertical">
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="搜索关键字：" />
+                                <TextBox
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=6}"
+                                    BorderThickness="0"
+                                    Text="{Binding WallHavenSearchKeyWords, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="页数：" />
+
+                                <ui:NumberBox
+                                    FontSize="12"
+                                    Maximum="{Binding TotalPage}"
+                                    Minimum="1"
+                                    Value="{Binding CurPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="/" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="{Binding TotalPage}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock FontSize="12" Text="条目筛选：" />
+                                <CheckBox Content="通常" IsChecked="{Binding IsGeneralEnable, Mode=TwoWay}" />
+                                <CheckBox Content="动漫" IsChecked="{Binding IsAnimationEnable, Mode=TwoWay}" />
+                                <CheckBox Content="真人" IsChecked="{Binding IsPeopleEnable, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="热度排序:" />
+                                <ComboBox
+                                    BorderThickness="0"
+                                    ItemsSource="{Binding OrderLists}"
+                                    SelectedItem="{Binding SelectedOrder, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <ui:Button
+                                x:Name="StartSearchButton"
+                                Margin="10,10"
+                                Click="StartSearchButton_Click"
+                                Command=""
+                                Content="搜索" />
+                        </StackPanel>
+                    </ui:DynamicScrollViewer>
+                </Border>
+            </DataTemplate>
+        </Style.Resources>
+    </Style>
+</ResourceDictionary>

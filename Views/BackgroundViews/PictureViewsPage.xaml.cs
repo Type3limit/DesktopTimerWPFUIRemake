@@ -13,24 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace DesktopTimer.Views
+namespace DesktopTimer.Views.BackgroundViews
 {
     /// <summary>
-    /// TimerPage.xaml 的交互逻辑
+    /// PictureViewsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class TimerPage : Page
+    public partial class PictureViewsPage : Page
     {
-        public delegate void onMouseMove(MouseEventArgs e);
-        public event onMouseMove? MouseMoveHandler;
-
-        public TimerPage()
+        public PictureViewsPage()
         {
             InitializeComponent();
-        }
-
-        private void Border_MouseMove(object sender, MouseEventArgs e)
-        {
-            MouseMoveHandler?.Invoke(e);
         }
     }
 }

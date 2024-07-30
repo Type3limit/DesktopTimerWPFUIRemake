@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace DesktopTimerWPFUIRemake.Helpers
+namespace DesktopTimer.Helpers
 {
     /// <summary>
     /// Convert System.Windows.Media.Color To SolidColorBrush 
@@ -28,4 +28,29 @@ namespace DesktopTimerWPFUIRemake.Helpers
             return Binding.DoNothing;
         }
     }
+
+
+    /// <summary>
+    /// Convert target value as percent
+    /// </summary>
+    public class PercentValueConverters : IMultiValueConverter
+    {
+        object IMultiValueConverter.Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if(values.Count()!=2)
+            {
+                return Binding.DoNothing;
+            }
+            var percent = (double)values[0];
+            var targetValue = (double)values[1];
+
+            return percent * targetValue;
+        }
+
+        object[] IMultiValueConverter.ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            return new object[]{Binding.DoNothing, Binding.DoNothing};
+        }
+    }
+
 }

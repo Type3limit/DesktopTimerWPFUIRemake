@@ -1,11 +1,11 @@
 ﻿<ui:FluentWindow
-    x:Class="DesktopTimerWPFUIRemake.MainWindow"
+    x:Class="DesktopTimer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:DesktopTimerWPFUIRemake"
+    xmlns:local="clr-namespace:DesktopTimer"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:DesktopTimerWPFUIRemake.models"
+    xmlns:model="clr-namespace:DesktopTimer.models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="MainWindow"
     Width="800"
@@ -27,7 +27,11 @@
         <model:MainWorkModel />
     </Window.DataContext>
 
-    <Border x:Name="OuterBorder">
+    <Border
+        x:Name="FrameBorder"
+        ClipToBounds="True"
+        CornerRadius="{Binding DisplaySetting.TimerBackgroundCornorRadius, UpdateSourceTrigger=PropertyChanged}"
+        SnapsToDevicePixels="True">
         <Frame x:Name="ContentFrame" />
     </Border>
 

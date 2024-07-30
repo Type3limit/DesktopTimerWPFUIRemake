@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using DesktopTimer.Views;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -10,7 +11,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Wpf.Ui.Controls;
 
-namespace DesktopTimerWPFUIRemake
+namespace DesktopTimer
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -20,6 +21,19 @@ namespace DesktopTimerWPFUIRemake
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            var TimerPage = new TimerPage();
+            TimerPage.MouseMoveHandler += TimerPage_MouseMoveHandler; ;
+            ContentFrame.Navigate(TimerPage);
+        }
+
+        private void TimerPage_MouseMoveHandler(MouseEventArgs e)
+        {
+            DragMove();
         }
     }
 }

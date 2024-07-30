@@ -6,8 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Windows.Media;
+using System.Windows;
 
-namespace DesktopTimerWPFUIRemake.models.displayModel
+namespace DesktopTimer.models.displayModel
 {
     public class GlobalDisplaySettingModel : ObservableObject
     {
@@ -27,6 +28,28 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
 
         #region Timer
 
+        private double timerBackgroundWidth = 0.3;
+        /// <summary>
+        /// Timer background width
+        /// </summary>
+        public double TimerBackgroundWidth
+        {
+            get => timerBackgroundWidth; 
+            set => SetProperty(ref timerBackgroundWidth , value); 
+        }
+
+
+        private double timerBackgroundHeight = 0.3;
+        /// <summary>
+        /// Timer background height
+        /// </summary>
+        public double TimerBackgroundHeight
+        {
+            get => timerBackgroundHeight; 
+            set => SetProperty(ref timerBackgroundHeight, value); 
+        }
+
+
         private bool isTimerBorderVisiable = true;
         /// <summary>
         /// To mark if timer border visiable
@@ -34,10 +57,8 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
         public bool IsTimerBorderVisiable
         {
             get=>isTimerBorderVisiable;
-            set
-            {
-                SetProperty(ref isTimerBorderVisiable , value);
-            }
+            set=>SetProperty(ref isTimerBorderVisiable , value);
+            
         }
 
         private FontFamily? selectedFontFamily = null;
@@ -67,11 +88,7 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
         public Color TimeFontColor
         {
             get => timeFontColor;
-            set
-            {
-                SetProperty(ref timeFontColor, value);
-                OnPropertyChanged("TimeFontBrush");
-            }
+            set => SetProperty(ref timeFontColor, value);
         }
 
 
@@ -79,15 +96,24 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
         /// <summary>
         /// Timer background color
         /// </summary>
-        private Color TimerBackgroundColor
+        public Color TimerBackgroundColor
         {
             get=> timerBackgroundColor;
-            set
-            {
-                SetProperty(ref timerBackgroundColor, value);
-                OnPropertyChanged("TimerBackgroundBrush");
-            }
+            set=> SetProperty(ref timerBackgroundColor, value);
+                
         }
+
+
+        private CornerRadius timerBackgroundCornorRadius = new CornerRadius(6);
+        /// <summary>
+        /// Timer background radius
+        /// </summary>
+        public CornerRadius TimerBackgroundCornorRadius
+        {
+            get=> timerBackgroundCornorRadius;
+            set=>SetProperty(ref timerBackgroundCornorRadius, value);
+        }
+
 
         private Color weekendFontColor = Colors.White;
         /// <summary>
@@ -96,11 +122,7 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
         public Color WeekendFontColor
         {
             get => weekendFontColor;
-            set
-            {
-                SetProperty(ref weekendFontColor, value);
-                OnPropertyChanged("WeekendFontBrush");
-            }
+            set => SetProperty(ref weekendFontColor, value);
         }
 
         private int timeCenterFontSize = 20;
@@ -123,9 +145,55 @@ namespace DesktopTimerWPFUIRemake.models.displayModel
             set => SetProperty(ref weekendCenterFontSize, value);
         }
 
+        private string currentTimeStr = string.Empty;
+        /// <summary>
+        /// string of time
+        /// </summary>
+        public string CurrentTimeStr
+        {
+            get => currentTimeStr;
+            set => SetProperty(ref currentTimeStr, value);
+
+        }
+
+        private string currentWeekTimeStr = string.Empty;
+        /// <summary>
+        /// string of week
+        /// </summary>
+        public string CurrentWeekTimeStr
+        {
+            get => currentWeekTimeStr;
+            set => SetProperty(ref currentWeekTimeStr, value);
+        }
+        #endregion
+
 
         #endregion
 
+        #region constructor
+
+
+        MainWorkModel? mainModelInstance = null;
+
+        public GlobalDisplaySettingModel(MainWorkModel? modelInstance)
+        {
+            this.mainModelInstance = modelInstance;
+        }
+
+        #endregion
+
+
+        #region methods
+
+        /// <summary>
+        /// get all font in system
+        /// </summary>
+        private void GetAllFont()
+        {
+            FontFamilies = Fonts.SystemFontFamilies.ToList();
+            SelectedFontFamily = FontFamilies.FirstOrDefault();
+            SelectedWeekendFontFamily = FontFamilies.FirstOrDefault();
+        }
 
         #endregion
     }
