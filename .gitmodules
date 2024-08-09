@@ -1,0 +1,3 @@
+[submodule "ThirdParty/Src/WPFUI"]
+	path = ThirdParty/Src/WPFUI
+	url = https://github.com/lepoco/wpfui
