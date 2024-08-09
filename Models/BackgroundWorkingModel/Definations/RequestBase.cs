@@ -8,16 +8,15 @@ using System.Threading.Tasks;
 
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
-    public abstract class WebResponseBase : ObservableObject
+    public  class ResponseBase : ObservableObject
     {
     }
 
-    public abstract class WebRequestQueryBase : ObservableObject
+    public  class RequestQueryBase : ObservableObject
     {
-
     }
 
-    public abstract class WebRequestBase : ObservableObject
+    public abstract class RequestBase : ObservableObject
     {
         public abstract Type Type { get; }
 
@@ -36,7 +35,6 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         }
 
-
         /// <summary>
         /// reset request
         /// </summary>
@@ -46,20 +44,26 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         /// build query
         /// </summary>
         /// <returns></returns>
-        abstract public WebRequestQueryBase? BuildQuery(params object[]? objs);
+        abstract public RequestQueryBase? BuildQuery(params object[]? objs);
         /// <summary>
         /// send request
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        abstract public Task<WebResponseBase?> Request(WebRequestQueryBase? query);
+        abstract public Task<ResponseBase?> Request(RequestQueryBase? query);
 
         /// <summary>
         /// parse result
         /// </summary>
         /// <param name="currentResponse"></param>
         /// <returns></returns>
-        abstract public IAsyncEnumerable<object?> ParseResult(WebResponseBase? currentResponse);
+        abstract public IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse);
 
+        /// <summary>
+        /// mark if current response is last page
+        /// </summary>
+        /// <param name="currentResponse"></param>
+        /// <returns></returns>
+        abstract public bool HasReachedEnd(ResponseBase? currentResponse);
     }
 }

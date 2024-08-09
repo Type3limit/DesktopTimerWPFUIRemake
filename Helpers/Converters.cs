@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
+using Wpf.Ui.Controls;
 
 namespace DesktopTimer.Helpers
 {
@@ -24,6 +25,45 @@ namespace DesktopTimer.Helpers
         }
 
         object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    /// <summary>
+    /// boolean to visibility
+    /// </summary>
+    public class BoolToVisiableConverters : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if(value is bool visiable)
+            {
+                return visiable ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            }
+            return Binding.DoNothing;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+    /// <summary>
+    /// boolean to reverse visibility
+    /// </summary>
+    public class BoolToReverseVisiableConverters : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool visiable)
+            {
+                return visiable ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+            }
+            return Binding.DoNothing;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return Binding.DoNothing;
         }
@@ -53,4 +93,69 @@ namespace DesktopTimer.Helpers
         }
     }
 
+
+    public class HalfConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null)
+                return Binding.DoNothing;
+            var curValue = value as double?;
+            var percent = double.Parse(parameter as string);
+
+            return curValue == null ? Binding.DoNothing : curValue.Value / percent;
+
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+
+    public class PercentFormater : INumberFormatter, INumberParser
+    {
+        string INumberFormatter.FormatDouble(double? value)
+        {
+            return ((value * 100.0).Value).ToString("F2")??"0" + " %";
+        }
+
+        string INumberFormatter.FormatInt(int? value)
+        {
+            return (value*100).ToString() + " %";
+        }
+
+        string INumberFormatter.FormatUInt(uint? value)
+        {
+            return (value * 100).ToString() + " %";
+        }
+
+        double? INumberParser.ParseDouble(string? value)
+        {
+            if(double.TryParse(value,out var curVar))
+            {
+                return curVar/100.0;
+            }
+            return 0;
+        }
+
+        int? INumberParser.ParseInt(string? value)
+        {
+            if (int.TryParse(value, out var curVar))
+            {
+                return curVar;
+            }
+            return 0;
+        }
+
+        uint? INumberParser.ParseUInt(string? value)
+        {
+            if (uint.TryParse(value, out var curVar))
+            {
+                return curVar;
+            }
+            return 0;
+        }
+    }
 }

@@ -1,11 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
+using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
 using DesktopTimer.Models.BackgroundWorkingModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading.Tasks; 
 
 namespace DesktopTimer.models
 {
@@ -22,26 +24,26 @@ namespace DesktopTimer.models
             get=>displaySetting??(displaySetting = new GlobalDisplaySettingModel(this));
         }
 
-        private WebRequestModel? webRequest = null;
+        private BackgroundImageRequestModel? backgroundImageRequest = null;
         /// <summary>
         /// Unit of any web request 
         /// </summary>
-        public WebRequestModel? WebRequest
+        public BackgroundImageRequestModel? BackgroundImageRequest
         {
-            get => webRequest??(webRequest = new WebRequestModel(this));
+            get => backgroundImageRequest??(backgroundImageRequest = new BackgroundImageRequestModel(this));
         }
 
         #endregion
 
         #region delegate 
-        public delegate void onTimer();
-        public event onTimer? TimerHandler;
         #endregion
 
         #region constructor
 
         public MainWorkModel()
         {
+            BackgroundImageRequest?.Initialize();
+            DisplaySetting?.Initilize();
             StartTimer();
         }
 
@@ -64,8 +66,8 @@ namespace DesktopTimer.models
             timer = new System.Timers.Timer();
             timer.Interval = 1000;
             timer.Elapsed += (o,e) => { 
-                TimerHandler?.BeginInvoke(new AsyncCallback((ar) => { TimerHandler?.EndInvoke(ar); }), null);
-                };
+                WeakReferenceMessenger.Default.Send(new TimeUpdateMessage());
+            };
             timer.Start();
         }
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using DesktopTimer.Helpers;
 using Flurl.Http;
@@ -218,7 +219,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
     }
 
-    public class WallhavenRequestQuery : WebRequestQueryBase
+    public class WallhavenRequestQuery : RequestQueryBase
     {
         public WallhavenRequestQueryCore? queryCore { set; get; }
         public WallHavenCategories catagories { set; get; } = new WallHavenCategories();
@@ -273,7 +274,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         public string? path { set; get; }
     }
 
-    public class WallhavenResponse : WebResponseBase
+    public class WallhavenResponse : ResponseBase
     {
         public List<WallhavenData?>? data { set; get; }
         public WallhavenMeta? meta { set; get; }
@@ -284,7 +285,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
     #region request defainations
 
-    public class WallHavenRequest : WebRequestBase
+    public class WallHavenRequest : RequestBase
     {
         #region properties
 
@@ -311,7 +312,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             set => SetProperty(ref isPeopleEnable, value);
         }
 
-
+        [JsonIgnore]
         private Dictionary<string, string> orderText = new Dictionary<string, string>()
         {
             {"一天","1d" },
@@ -329,6 +330,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
         private string searchOrderString = "1y";
+
         private string selectedOrder = "一年";
 
         public string SelectedOrder
@@ -342,6 +344,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
         private long curPage = 0;
+        [JsonIgnore]
         public long CurPage
         {
             get => curPage;
@@ -349,6 +352,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
         private long totalPage = 1;
+        [JsonIgnore]
         public long TotalPage
         {
             get => totalPage;
@@ -365,9 +369,10 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             set => SetProperty(ref wallHavenSearchKeyWords, value);
         }
         #endregion
+        [JsonIgnore]
         private List<string> WallHavenCache = new List<string>();
-
-        public override string RequestUrl => "https://wallhaven.cc/api/v1/search";
+        [JsonIgnore]
+        public override string RequestUrl => @"https://wallhaven.cc/api/v1/search";
 
         public override void ResetRequest()
         {
@@ -378,7 +383,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             IsPeopleEnable= false;
         }
 
-        public override WebRequestQueryBase? BuildQuery(params object[]? objs)
+        public override RequestQueryBase? BuildQuery(params object[]? objs)
         {
             var query = new WallhavenRequestQuery();
             query.atleast = "";
@@ -401,7 +406,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             return query;
         }
 
-        public override async IAsyncEnumerable<object?> ParseResult(WebResponseBase? currentResponse)
+        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse)
         {
 
             if (!(currentResponse is WallhavenResponse))
@@ -420,35 +425,41 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                     if (string.IsNullOrEmpty(x?.path))
                         continue;
                     Guid guid = Guid.NewGuid();
-                    var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
+                    var curFileName = x.id;//DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
                     var exten = "." + x?.file_type?.Split('/').LastOrDefault();
                     string res = "";
+                    var totalPath = FileMapper.NormalPictureDir.PathCombine(curFileName + exten);
                     try
                     {
-                        if (x != null)
-                            res = await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten,
-                                4096);
+                        
+                        if(!totalPath.IsFileExist())
+                        {
+                            if (x != null)
+                                res = await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten,
+                                    4096);
+                        }
+
                     }
                     catch (Exception ex)
                     {
                         Trace.WriteLine(ex);
                     }
 
-                    var TotalFileName = FileMapper.NormalPictureDir.PathCombine(curFileName + exten);
-                    if (!File.Exists(TotalFileName))
+                    if (!totalPath.IsFileExist())
                         continue;
-
-                    //WallHavenCache.Add(TotalFileName);
-
 #pragma warning restore CS8602 // 解引用可能出现空引用。
-                    yield return TotalFileName;
+                    yield return totalPath;
                 }
             }
+            else
+            {
 
-            yield return null;
+                yield return null;
+            }
+
         }
 
-        public override async Task<WebResponseBase?> Request(WebRequestQueryBase? query)
+        public override async Task<ResponseBase?> Request(RequestQueryBase? query)
         {
             if (!(query is WallhavenRequestQuery wallHavenQuery))
                 return null;
@@ -456,6 +467,16 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             var requestUrl = RequestUrl + curQuery;
             var res = await requestUrl.GetAsync();
             return await res.GetJsonAsync<WallhavenResponse?>();
+        }
+
+        public override bool HasReachedEnd(ResponseBase? currentResponse)
+        {
+            if (!(currentResponse is WallhavenResponse))
+                return false;
+            var response = currentResponse as WallhavenResponse;
+            if (response == null || response.meta == null)
+                return false;
+            return response.meta.current_page == response.meta.last_page;
         }
     }
 

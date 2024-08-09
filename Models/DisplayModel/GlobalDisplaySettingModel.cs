@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +8,19 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Windows.Media;
 using System.Windows;
+using Microsoft.VisualBasic;
+using DesktopTimer.Helpers;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows.Forms;
+using System.Windows.Media.Imaging;
 
 namespace DesktopTimer.models.displayModel
 {
-    public class GlobalDisplaySettingModel : ObservableObject
+
+    
+
+    public partial class GlobalDisplaySettingModel : ObservableObject
     {
         #region Properties
 
@@ -26,27 +36,29 @@ namespace DesktopTimer.models.displayModel
         }
 
 
+
+
         #region Timer
 
-        private double timerBackgroundWidth = 0.3;
+        private double timerBackgroundWidth = 0.25;
         /// <summary>
         /// Timer background width
         /// </summary>
         public double TimerBackgroundWidth
         {
-            get => timerBackgroundWidth; 
-            set => SetProperty(ref timerBackgroundWidth , value); 
+            get => timerBackgroundWidth;
+            set => SetProperty(ref timerBackgroundWidth, value);
         }
 
 
-        private double timerBackgroundHeight = 0.3;
+        private double timerBackgroundHeight = 0.15;
         /// <summary>
         /// Timer background height
         /// </summary>
         public double TimerBackgroundHeight
         {
-            get => timerBackgroundHeight; 
-            set => SetProperty(ref timerBackgroundHeight, value); 
+            get => timerBackgroundHeight;
+            set => SetProperty(ref timerBackgroundHeight, value);
         }
 
 
@@ -56,9 +68,9 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         public bool IsTimerBorderVisiable
         {
-            get=>isTimerBorderVisiable;
-            set=>SetProperty(ref isTimerBorderVisiable , value);
-            
+            get => isTimerBorderVisiable;
+            set => SetProperty(ref isTimerBorderVisiable, value);
+
         }
 
         private FontFamily? selectedFontFamily = null;
@@ -92,15 +104,15 @@ namespace DesktopTimer.models.displayModel
         }
 
 
-        private Color timerBackgroundColor = Color.FromArgb(128,0,0,0);
+        private Color timerBackgroundColor = Color.FromArgb(128, 0, 0, 0);
         /// <summary>
         /// Timer background color
         /// </summary>
         public Color TimerBackgroundColor
         {
-            get=> timerBackgroundColor;
-            set=> SetProperty(ref timerBackgroundColor, value);
-                
+            get => timerBackgroundColor;
+            set => SetProperty(ref timerBackgroundColor, value);
+
         }
 
 
@@ -110,8 +122,8 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         public CornerRadius TimerBackgroundCornorRadius
         {
-            get=> timerBackgroundCornorRadius;
-            set=>SetProperty(ref timerBackgroundCornorRadius, value);
+            get => timerBackgroundCornorRadius;
+            set => SetProperty(ref timerBackgroundCornorRadius, value);
         }
 
 
@@ -165,9 +177,99 @@ namespace DesktopTimer.models.displayModel
             get => currentWeekTimeStr;
             set => SetProperty(ref currentWeekTimeStr, value);
         }
+
+
+        static string[] Day = new string[] { "星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六" };
         #endregion
 
+        #region Background
 
+        private double backgroundImageOpacity = 1d;
+        /// <summary>
+        /// opacity of current background
+        /// </summary>
+        public double BackgroundImageOpacity
+        {
+            get => backgroundImageOpacity;
+            set => SetProperty(ref backgroundImageOpacity, value);
+        }
+
+        private long curCountDown = 0;
+        /// <summary>
+        /// fresh background count down
+        /// </summary>
+        public long CurCountDown
+        {
+            get => curCountDown;
+            set => SetProperty(ref curCountDown, value);
+        }
+
+        private long totalCountDown = 20;//20 seconds by default
+        /// <summary>
+        /// count down limit
+        /// </summary>
+        public long TotalCountDown
+        {
+            get => totalCountDown;
+            set => SetProperty(ref totalCountDown, value);
+        }
+
+
+        private long maxCacheCount = 20;
+        /// <summary>
+        /// max background cache count 
+        /// </summary>
+        public long MaxCacheCount
+        {
+            get=>maxCacheCount;
+            set=>SetProperty(ref maxCacheCount,value);
+        }
+
+        private BitmapImage? backgroundView = null;
+        /// <summary>
+        /// current background image
+        /// </summary>
+        public BitmapImage? BackgroundView
+        {
+            get => backgroundView;
+            set => SetProperty(ref backgroundView, value);
+        }
+
+
+        private List<string> backgroundImageLists = new List<string>();
+        /// <summary>
+        /// background image cache list
+        /// </summary>
+        public List<string> BackgroundImageLists
+        {
+            get => backgroundImageLists;
+            set => SetProperty(ref backgroundImageLists, value);
+        }
+
+
+        private bool shouldPauseFresh = false;
+        /// <summary>
+        /// mark that should pause fresh background
+        /// </summary>
+        public bool ShouldPauseFresh
+        {
+            get=>shouldPauseFresh;
+            set=>SetProperty(ref shouldPauseFresh,value);
+        }
+
+        #endregion
+
+        #region setting 
+        [ObservableProperty]
+        private bool isSettingOpen = false;
+        /// <summary>
+        /// mark if setting flyout opened
+        /// </summary>
+
+        [ObservableProperty]
+        private bool isOnlineBackgroundMode = true;
+
+        #endregion
         #endregion
 
         #region constructor
@@ -180,10 +282,120 @@ namespace DesktopTimer.models.displayModel
             this.mainModelInstance = modelInstance;
         }
 
+        private void MainModelInstance_TimerHandler()
+        {
+            //update timer str 
+            var curDate = DateTime.Now.ToLocalTime();
+            CurrentTimeStr = curDate.ToString("yyyy-MM-dd HH:mm:ss");
+            string week = Day[Convert.ToInt32(DateTime.Now.DayOfWeek.ToString("d"))].ToString();
+            week += (",今年的第" + DateTime.Now.DayOfYear + "天");
+            CurrentWeekTimeStr = week;
+
+
+            //update background views 
+            ++CurCountDown;
+            if (CurCountDown < TotalCountDown)
+                return;
+
+            CurCountDown = 0;
+
+            if (BackgroundImageLists.Count > 0)
+            {
+                FreshCurrentImage();
+
+                CheckToFillBackgroundCache();
+            }
+        }
+
         #endregion
 
+        #region command
+
+
+        bool originTimerBorderStatus = false;
+        private ICommand? openSettingCommand = null;
+        public ICommand OpenSettingCommand
+        {
+            get=>openSettingCommand??(openSettingCommand = new RelayCommand(() =>
+            {
+                IsSettingOpen = true;
+            }));
+        }
+
+        private ICommand? closeSettingCommand = null;
+        public ICommand CloseSettingCommand
+        {
+            get => openSettingCommand ?? (openSettingCommand = new RelayCommand(() =>
+            {
+                IsSettingOpen = false;
+            }));
+        }
+
+
+        private ICommand? requestFlushCommand = null;
+        public ICommand RequestFlushCommand
+        {
+            get=>requestFlushCommand??(requestFlushCommand = new RelayCommand(() => 
+            {
+                FreshCurrentImage();
+            }));
+        }
+
+
+        private ICommand? setBackgroundfreshCommand= null;
+        public ICommand SetBackgroundfreshCommand
+        {
+            get=>setBackgroundfreshCommand ??(setBackgroundfreshCommand = new RelayCommand(() => {
+
+                ShouldPauseFresh = !ShouldPauseFresh;
+            }));
+        }
+
+        #endregion
 
         #region methods
+
+        public void Initilize()
+        {
+            WeakReferenceMessenger.Default.Register<TimeUpdateMessage>(this, (t, message) => 
+            {
+                MainModelInstance_TimerHandler();
+            });
+
+            WeakReferenceMessenger.Default.Register<BackgroundSourceUpdateMessage>(this, (t, message) => 
+            {
+                if(message?.Value!=null&&message.Value.IsFileExist())
+                {
+                    AddBackgroundImageCache(message.Value);
+                }
+            });
+
+
+            GetAllFont();
+            CheckToFillBackgroundCache();
+        }
+
+        public async void FreshCurrentImage()
+        {
+            var cur = BackgroundImageLists.FirstOrDefault();
+            if(cur==null|| ShouldPauseFresh)
+                return;
+            BackgroundView = await ImageTool.LoadImg(cur);
+            BackgroundImageLists.Remove(cur);
+        }
+
+        /// <summary>
+        /// add background image to cache list
+        /// </summary>
+        /// <param name="path"></param>
+        public void AddBackgroundImageCache(string path)
+        {
+            backgroundImageLists.Add(path);
+            if(BackgroundView==null)
+            {
+                FreshCurrentImage();
+            }
+        }
 
         /// <summary>
         /// get all font in system
@@ -195,6 +407,15 @@ namespace DesktopTimer.models.displayModel
             SelectedWeekendFontFamily = FontFamilies.FirstOrDefault();
         }
 
+        /// <summary>
+        /// request for fill cache list
+        /// </summary>
+        private void CheckToFillBackgroundCache()
+        {
+            if(BackgroundImageLists.Count>=MaxCacheCount )
+                return;//no need for cache
+            WeakReferenceMessenger.Default.Send(new RequestFillBackgroundMessage((int)(MaxCacheCount - BackgroundImageLists.Count)));
+        }
         #endregion
     }
 }

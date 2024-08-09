@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="clr-namespace:DesktopTimer.models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="rootPage"
     Title="TimerPage"
     d:DataContext="{d:DesignInstance Type={x:Type model:MainWorkModel}}"
     d:DesignHeight="450"
@@ -16,24 +17,34 @@
     <Page.Resources>
         <con:SolidColorConverters x:Key="ColorToSolidBrushConveter" />
         <con:PercentValueConverters x:Key="PercentValueConverter" />
+        <con:BoolToVisiableConverters x:Key="Bool2VisiConverter" />
+        <con:BoolToReverseVisiableConverters x:Key="Bool2ReverseVisiConverter" />
     </Page.Resources>
+
 
 
     <Border
         x:Name="OuterBorder"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
+        Width="{Binding ElementName=rootPage, Path=ActualWidth}"
+        Height="{Binding ElementName=rootPage, Path=ActualHeight}"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center">
         <Grid>
-            <Frame x:Name="ContentFrame" Panel.ZIndex="0" />
+
+
+            <Frame
+                x:Name="ContentFrame"
+                Panel.ZIndex="0"
+                DataContext="{Binding ElementName=rootPage, Path=DataContext}" />
             <Border
                 x:Name="TimeBorder"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Panel.ZIndex="1"
-                Background="{Binding DisplaySetting.TimerBackgroundColor, UpdateSourceTrigger=PropertyChanged}"
+                Background="{Binding DisplaySetting.TimerBackgroundColor, Converter={StaticResource ColorToSolidBrushConveter}, UpdateSourceTrigger=PropertyChanged}"
                 CornerRadius="{Binding DisplaySetting.TimerBackgroundCornorRadius, UpdateSourceTrigger=PropertyChanged}"
                 MouseMove="Border_MouseMove"
-                Visibility="{Binding DisplaySetting.IsTimerBorderVisiable, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                Visibility="{Binding DisplaySetting.IsTimerBorderVisiable, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}">
                 <StackPanel Margin="5" VerticalAlignment="Center">
                     <TextBlock
                         HorizontalAlignment="Center"
@@ -42,6 +53,7 @@
                         FontSize="{Binding DisplaySetting.TimeCenterFontSize, UpdateSourceTrigger=PropertyChanged}"
                         Foreground="{Binding DisplaySetting.TimeFontColor, Converter={StaticResource ColorToSolidBrushConveter}, UpdateSourceTrigger=PropertyChanged}"
                         Text="{Binding DisplaySetting.CurrentTimeStr, UpdateSourceTrigger=PropertyChanged}"
+                        TextTrimming="CharacterEllipsis"
                         UseLayoutRounding="True" />
                     <TextBlock
                         Margin="0,5"
@@ -51,6 +63,7 @@
                         FontSize="{Binding DisplaySetting.WeekendCenterFontSize, UpdateSourceTrigger=PropertyChanged}"
                         Foreground="{Binding DisplaySetting.WeekendFontColor, Converter={StaticResource ColorToSolidBrushConveter}, UpdateSourceTrigger=PropertyChanged}"
                         Text="{Binding DisplaySetting.CurrentWeekTimeStr, UpdateSourceTrigger=PropertyChanged}"
+                        TextTrimming="CharacterEllipsis"
                         UseLayoutRounding="True" />
                 </StackPanel>
                 <Border.RenderTransform>
@@ -61,7 +74,7 @@
                 <Border.Width>
                     <MultiBinding Converter="{StaticResource PercentValueConverter}">
                         <MultiBinding.Bindings>
-                            <Binding Path="TimerBackgroundWidth" Source="DisplaySetting" />
+                            <Binding Path="DisplaySetting.TimerBackgroundWidth" />
                             <Binding ElementName="OuterBorder" Path="ActualWidth" />
                         </MultiBinding.Bindings>
                     </MultiBinding>
@@ -69,7 +82,7 @@
                 <Border.Height>
                     <MultiBinding Converter="{StaticResource PercentValueConverter}">
                         <MultiBinding.Bindings>
-                            <Binding Path="TimerBackgroundHeight" Source="DisplaySetting" />
+                            <Binding Path="DisplaySetting.TimerBackgroundHeight" />
                             <Binding ElementName="OuterBorder" Path="ActualHeight" />
                         </MultiBinding.Bindings>
                     </MultiBinding>
@@ -77,4 +90,43 @@
             </Border>
         </Grid>
     </Border>
+
+
+
+    <Page.ContextMenu>
+        <ContextMenu>
+
+            <ui:MenuItem
+                x:Name="NextBackground"
+                Command="{Binding DisplaySetting.RequestFlushCommand}"
+                Header="刷新背景" />
+
+            <ui:MenuItem Command="{Binding DisplaySetting.SetBackgroundfreshCommand}">
+                <ui:MenuItem.Header>
+                    <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
+                        <ui:ToggleSwitch
+                            Foreground="White"
+                            IsChecked="{Binding DisplaySetting.ShouldPauseFresh, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            IsEnabled="False" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Text="暂停/继续刷新" />
+                    </StackPanel>
+                </ui:MenuItem.Header>
+            </ui:MenuItem>
+
+            <ui:MenuItem
+                x:Name="OpenSetting"
+                Command="{Binding DisplaySetting.OpenSettingCommand}"
+                Header="打开设置" />
+            <ui:MenuItem
+                x:Name="CloseProgram"
+                Click="CloseProgram_Click"
+                Header="关闭程序" />
+
+        </ContextMenu>
+    </Page.ContextMenu>
+
+
 </Page>

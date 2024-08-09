@@ -1,13 +1,17 @@
-﻿<ui:FluentWindow
+﻿<mah:MetroWindow
     x:Class="DesktopTimer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:backView="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:DesktopTimer"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="clr-namespace:DesktopTimer.models"
+    xmlns:tray="http://schemas.lepo.co/wpfui/2022/xaml/tray"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="MainWindow"
+    x:Name="mainWindow"
+    Title="DesktopTimer"
     Width="800"
     Height="450"
     d:DataContext="{d:DesignInstance Type={x:Type model:MainWorkModel}}"
@@ -16,10 +20,17 @@
     BorderBrush="Transparent"
     BorderThickness="0"
     FontSize="14"
+    Foreground="White"
     ResizeMode="CanResize"
+    ShowCloseButton="False"
+    ShowInTaskbar="False"
+    ShowMaxRestoreButton="False"
+    ShowMinButton="False"
+    ShowSystemMenuOnRightClick="False"
     TextOptions.TextFormattingMode="Display"
     TextOptions.TextHintingMode="Animated"
     TextOptions.TextRenderingMode="ClearType"
+    TitleBarHeight="0"
     WindowStyle="None"
     mc:Ignorable="d">
 
@@ -32,7 +43,51 @@
         ClipToBounds="True"
         CornerRadius="{Binding DisplaySetting.TimerBackgroundCornorRadius, UpdateSourceTrigger=PropertyChanged}"
         SnapsToDevicePixels="True">
-        <Frame x:Name="ContentFrame" />
+        <Grid>
+            <ui:Flyout
+                x:Name="SettingFlyout"
+                Width="{Binding ElementName=mainWindow, Path=ActualWidth}"
+                Height="{Binding ElementName=mainWindow, Path=ActualHeight}"
+                IsOpen="{Binding DisplaySetting.IsSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Placement="Center">
+                <Border>
+                    <backView:SettingControl x:Name="SettingControl" DataContext="{Binding ElementName=mainWindow, Path=DataContext}" />
+                </Border>
+            </ui:Flyout>
+
+
+            <tray:NotifyIcon
+                Grid.Row="0"
+                FocusOnLeftClick="True"
+                Icon="pack://application:,,,/Assets/Timer.png"
+                MenuOnRightClick="True"
+                TooltipText="DesktopTimer">
+                <tray:NotifyIcon.Menu>
+                    <ContextMenu>
+                        <ui:MenuItem x:Name="MenuLabel" IsEnabled="false">
+                            <ui:MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image
+                                        Width="20"
+                                        Height="20"
+                                        Source="pack://application:,,,/Assets/Timer.png" />
+                                    <TextBlock FontSize="20" Text="标题测试" />
+                                </StackPanel>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                        <ui:MenuItem
+                            x:Name="ExitProgram"
+                            Click="CloseProgram_Click"
+                            Header="退出" />
+                    </ContextMenu>
+                </tray:NotifyIcon.Menu>
+            </tray:NotifyIcon>
+            
+            
+            <Frame x:Name="ContentFrame" />
+        </Grid>
+
     </Border>
 
-</ui:FluentWindow>
+
+</mah:MetroWindow>

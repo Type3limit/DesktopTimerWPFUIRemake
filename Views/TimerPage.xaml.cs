@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DesktopTimer.models;
+using DesktopTimer.Views.BackgroundViews;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,15 +24,46 @@ namespace DesktopTimer.Views
     {
         public delegate void onMouseMove(MouseEventArgs e);
         public event onMouseMove? MouseMoveHandler;
+        MainWorkModel? modelInstance = null;
+
+        object? lastContent = null;
 
         public TimerPage()
         {
             InitializeComponent();
+            Loaded += TimerPage_Loaded;
+            DataContextChanged += TimerPage_DataContextChanged;
+        }
+
+        private void TimerPage_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            modelInstance = e.NewValue as MainWorkModel;
+        }
+
+        private void TimerPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            var picturesView = new PictureViewsPage();
+            picturesView.MouseMoveHandler += PicturesView_MouseMoveHandler; ;
+            picturesView.DataContext = this.DataContext;
+            ContentFrame.Navigate(picturesView);
+        }
+
+        private void PicturesView_MouseMoveHandler(MouseEventArgs e)
+        {
+            MouseMoveHandler?.Invoke(e);
         }
 
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
             MouseMoveHandler?.Invoke(e);
         }
+
+
+
+        private void CloseProgram_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
     }
 }

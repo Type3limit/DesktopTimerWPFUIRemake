@@ -7,29 +7,46 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="clr-namespace:DesktopTimer.models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="RootPage"
     Title="PictureViewsPage"
     d:DataContext="{d:DesignInstance Type=model:MainWorkModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
+    MouseMove="RootPage_MouseMove"
     mc:Ignorable="d">
 
     <Grid>
 
+        <Border
+            x:Name="CurBorder"
+            Width="{Binding ElementName=CurImage, Path=ActualWidth}"
+            Height="{Binding ElementName=CurImage, Path=ActualHeight}"
+            VerticalAlignment="Center"
+            Background="Black"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            ClipToBounds="True"
+            CornerRadius="15"
+            Opacity="{Binding DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}"
+            SnapsToDevicePixels="True" />
+
         <Image
             x:Name="CurImage"
-            Panel.ZIndex="0"
+            Panel.ZIndex="9"
             RenderOptions.BitmapScalingMode="HighQuality"
             RenderOptions.CacheInvalidationThresholdMaximum="16"
             RenderOptions.CacheInvalidationThresholdMinimum="1"
             RenderOptions.CachingHint="Cache"
             RenderOptions.ClearTypeHint="Auto"
             RenderOptions.EdgeMode="Aliased"
-            Source="{Binding CurrentBackgroundPicture, UpdateSourceTrigger=PropertyChanged}"
+            SnapsToDevicePixels="True"
+            Source="{Binding DisplaySetting.BackgroundView, UpdateSourceTrigger=PropertyChanged}"
             Stretch="Uniform"
             UseLayoutRounding="True">
             <Image.OpacityMask>
                 <VisualBrush Visual="{Binding ElementName=CurBorder, Mode=OneTime}" />
             </Image.OpacityMask>
         </Image>
+
     </Grid>
 </Page>

@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Platforms>AnyCPU;x64</Platforms>
+    <ApplicationIcon>Assets\Timer.ico</ApplicationIcon>
+    <LangVersion>10.0</LangVersion>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ThirdParty\**" />
+    <EmbeddedResource Remove="ThirdParty\**" />
+    <None Remove="ThirdParty\**" />
+    <Page Remove="ThirdParty\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Timer.ico" />
+    <None Remove="Assets\Timer.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Timer.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CefSharp.Common" Version="126.2.180" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="FFME.Windows" Version="4.4.350" />
+    <PackageReference Include="Flurl" Version="4.0.0" />
+    <PackageReference Include="Flurl.Http" Version="4.0.2" />
+    <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui.Abstractions\Wpf.Ui.Abstractions.csproj" />
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui.DependencyInjection\Wpf.Ui.DependencyInjection.csproj" />
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui.SyntaxHighlight\Wpf.Ui.SyntaxHighlight.csproj" />
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui.ToastNotifications\Wpf.Ui.ToastNotifications.csproj" />
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui.Tray\Wpf.Ui.Tray.csproj" />
+    <ProjectReference Include="ThirdParty\Src\WPFUI\src\Wpf.Ui\Wpf.Ui.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Timer.ico" />
+    <Resource Include="Assets\Timer.png" />
+  </ItemGroup>
+
+</Project>
