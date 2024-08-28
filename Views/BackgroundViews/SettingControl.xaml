@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:con="clr-namespace:DesktopTimer.Helpers"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
     xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="clr-namespace:DesktopTimer.models"
@@ -16,39 +17,38 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <ResourceDictionary>
+
             <con:PercentFormater x:Key="PercentFormmater" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Views/Styles/WebViewsStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+
         </ResourceDictionary>
     </UserControl.Resources>
     <ui:DynamicScrollViewer>
         <StackPanel Orientation="Vertical">
 
-            <ui:ToggleSwitch
-                Margin="0,5"
-                VerticalAlignment="Center"
-                Content="启用在线背景"
-                FontSize="12"
-                IsChecked="{Binding DisplaySetting.IsOnlineBackgroundMode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-
-
-            <StackPanel Margin="0,5" Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal">
                 <TextBlock
                     VerticalAlignment="Center"
-                    FontSize="12"
-                    Text="本地背景路径：" />
-                <ui:TextBox
-                    Margin="0,0,10,0"
-                    BorderThickness="0"
-                    Text="{Binding LocalFileDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    Style="{StaticResource labelTextBlock}"
+                    Text="背景来源:" />
+                <ComboBox
+                    VerticalAlignment="Center"
+                    ItemsSource="{Binding BackgroundImageRequest.UseableRequest, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedItem="{Binding BackgroundImageRequest.SelectedRequest, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
             </StackPanel>
 
             <StackPanel Margin="0,5" Orientation="Horizontal">
 
 
 
-                <TextBlock VerticalAlignment="Center" Text="背景透明度：" />
+                <ui:TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource labelTextBlock}"
+                    Text="背景透明度：" />
                 <Slider
                     VerticalAlignment="Center"
                     Maximum="1"
@@ -67,12 +67,33 @@
                     Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
 
-            <!--  Extra setting  -->
-            <!--<ContentControl
-                x:Name="ExtraSettingControl"
-                Content="{Binding BackgroundImageRequest.SelectedRequestInstance, UpdateSourceTrigger=PropertyChanged}"
-                DataContext="{Binding BackgroundImageRequest.SelectedRequestInstance}"
-                Style="{StaticResource WebsiteSubSettingPageStyle}" />-->
+            <StackPanel Margin="0,5" Orientation="Horizontal">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource labelTextBlock}"
+                    Text="缓存大小：" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplaySetting.CacheSize}" />
+
+                <ui:Button
+                    Margin="5,0"
+                    Command="{Binding DisplaySetting.ClearCacheCommand}"
+                    Content="清理"
+                    ToolTip="清理" />
+            </StackPanel>
+
+            <Rectangle
+                Width="600"
+                Height="1"
+                Margin="0,10"
+                Fill="SlateGray" />
+
+            <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance}" />
+
+            <Rectangle
+                Width="600"
+                Height="1"
+                Margin="0,10"
+                Fill="SlateGray" />
         </StackPanel>
     </ui:DynamicScrollViewer>
 </UserControl>

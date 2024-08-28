@@ -378,6 +378,58 @@ namespace DesktopTimer.Helpers
             }
 
         }
+
+        /// <summary>
+        /// get directory size
+        /// </summary>
+        /// <param name="dirPath"></param>
+        /// <returns></returns>
+        public static long GetDirectorySize(this string dirPath)
+        {
+            if (!System.IO.Directory.Exists(dirPath))
+                return 0;
+            long len = 0;
+            DirectoryInfo di = new DirectoryInfo(dirPath);
+            foreach (FileInfo item in di.GetFiles())
+            {
+                len += item.Length;
+            }
+            DirectoryInfo[] dis = di.GetDirectories();
+            if (dis.Length > 0)
+            {
+                for (int i = 0; i < dis.Length; i++)
+                {
+                    len += GetDirectorySize(dis[i].FullName);
+                }
+            }
+            return len;
+        }
+
+
+        /// <summary>
+        /// get file size
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static long GetFileSize(this string filePath)
+        {
+            long temp = 0;
+            if (!File.Exists(filePath))
+            {
+                string[] strs = Directory.GetFileSystemEntries(filePath);
+                foreach (string item in strs)
+                {
+                    temp += GetFileSize(item);
+                }
+            }
+            else
+            {
+                FileInfo fileInfo = new FileInfo(filePath);
+                return fileInfo.Length;
+            }
+            return temp;
+        }
+
         #endregion
 
 
@@ -1036,29 +1088,38 @@ namespace DesktopTimer.Helpers
         {
             return await Task.Run(() =>
             {
-                if (!File.Exists(imagePath))
-                    return null;
-                BitmapImage bi = new BitmapImage();
-
-                // Begin initialization.
-                bi.BeginInit();
-                bi.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-                // Set properties.
-                bi.CacheOption = BitmapCacheOption.OnLoad;
-
-                using (Stream ms = new MemoryStream(File.ReadAllBytes(imagePath)))
+                try
                 {
-                    if (ms.Length <= 0)
+                    if (!File.Exists(imagePath))
+                        return null;
+                    BitmapImage bi = new BitmapImage();
+
+                    // Begin initialization.
+                    bi.BeginInit();
+                    bi.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                    // Set properties.
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+
+                    using (Stream ms = new MemoryStream(File.ReadAllBytes(imagePath)))
                     {
+                        if (ms.Length <= 0)
+                        {
+                            bi.EndInit();
+                            bi.Freeze();
+                            return bi;
+                        }
+                        bi.StreamSource = ms;
                         bi.EndInit();
                         bi.Freeze();
-                        return bi;
                     }
-                    bi.StreamSource = ms;
-                    bi.EndInit();
-                    bi.Freeze();
+                    return bi;
                 }
-                return bi;
+                catch(Exception ex)
+                {
+                    Trace.WriteLine(ex);
+                    return null;
+                }
+               
             });
         }
 

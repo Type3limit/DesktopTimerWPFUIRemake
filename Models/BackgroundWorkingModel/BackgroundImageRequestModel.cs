@@ -74,6 +74,11 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
         /// </summary>
         IAsyncEnumerable<object?>? results = null;
 
+
+        CancellationTokenSource? RequestCanceller = null;
+
+
+        bool DisableAutoPageIncrease = false;
         #endregion
 
 
@@ -86,6 +91,22 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             ReadWebTypes();
 
             WriteWebTypes();
+
+
+            WeakReferenceMessenger.Default.Register<RequestAbandonCurrentCacheMessage>(this, (e, t) => 
+            {
+                if(t.Value==0)
+                {
+                    if (RequestCanceller != null)
+                    {
+                        RequestCanceller.Cancel();
+                    }
+                    currentResponse = null;
+                    results = null;
+                    
+                }
+                DisableAutoPageIncrease = true;
+            });
         }
 
 
@@ -194,22 +215,30 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
         async void QueryWebRequestCache()
         {
+            Trace.WriteLine("Start request cache");
             try
             {
-                if (SelectedRequestInstance == null)
+                if(RequestCanceller!=null)
+                {
+                    RequestCanceller.Cancel();
+                }
+                RequestCanceller= new CancellationTokenSource();
+                if (SelectedRequestInstance == null )
                     return;
                 if (currentResponse == null)
                 {
-                    var query = SelectedRequestInstance.BuildQuery();
+                    var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
                     currentResponse = await SelectedRequestInstance.Request(query);
-                    if (currentResponse == null)
+                    if (currentResponse == null)//request failed!
                         return;
-                    results = SelectedRequestInstance.ParseResult(currentResponse);
+                    results = SelectedRequestInstance.ParseResult(currentResponse,RequestCanceller.Token);
+                    if(DisableAutoPageIncrease)
+                        DisableAutoPageIncrease = false;
                 }
 
                 if (results != null)
                 {
-                    await foreach (var itr in results)
+                    await foreach (var itr in results.WithCancellation(RequestCanceller.Token))
                     {
                         if(itr == null&& SelectedRequestInstance.HasReachedEnd(currentResponse))//when reaching end ,reset request to the first
                         {
@@ -224,6 +253,10 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
                     }
                 }
             }
+            catch(OperationCanceledException )
+            {
+                Trace.WriteLine("requst cancelled");
+            }
             catch (Exception ex)
             {
                 Trace.WriteLine($"query cache with exception :{ex}");
@@ -231,6 +264,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             finally
             {
                 currentResponse = null;
+                Trace.WriteLine("Request cache finished");
             }
         }
 

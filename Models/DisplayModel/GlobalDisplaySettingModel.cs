@@ -14,11 +14,13 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows.Forms;
 using System.Windows.Media.Imaging;
+using System.Diagnostics;
+using System.IO;
 
 namespace DesktopTimer.models.displayModel
 {
 
-    
+
 
     public partial class GlobalDisplaySettingModel : ObservableObject
     {
@@ -36,7 +38,17 @@ namespace DesktopTimer.models.displayModel
         }
 
 
-
+        #region cache
+        private string cacheSize = "0MB";
+        /// <summary>
+        /// 缓存大小
+        /// </summary>
+        public string CacheSize
+        {
+            get => cacheSize;
+            set => SetProperty(ref cacheSize, value);
+        }
+        #endregion
 
         #region Timer
 
@@ -221,8 +233,8 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         public long MaxCacheCount
         {
-            get=>maxCacheCount;
-            set=>SetProperty(ref maxCacheCount,value);
+            get => maxCacheCount;
+            set => SetProperty(ref maxCacheCount, value);
         }
 
         private BitmapImage? backgroundView = null;
@@ -253,8 +265,8 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         public bool ShouldPauseFresh
         {
-            get=>shouldPauseFresh;
-            set=>SetProperty(ref shouldPauseFresh,value);
+            get => shouldPauseFresh;
+            set => SetProperty(ref shouldPauseFresh, value);
         }
 
         #endregion
@@ -275,12 +287,26 @@ namespace DesktopTimer.models.displayModel
         #region constructor
 
 
+
         MainWorkModel? mainModelInstance = null;
 
         public GlobalDisplaySettingModel(MainWorkModel? modelInstance)
         {
             this.mainModelInstance = modelInstance;
+
+            WeakReferenceMessenger.Default.Register<RequestAbandonCurrentCacheMessage>(this, (e, t) =>
+            {
+                if (t.Value == 0)
+                {
+                    BackgroundView = null;
+                    BackgroundImageLists.Clear();
+                    CheckToFillBackgroundCache();
+                }
+            });
+
+
         }
+
 
         private void MainModelInstance_TimerHandler()
         {
@@ -290,6 +316,12 @@ namespace DesktopTimer.models.displayModel
             string week = Day[Convert.ToInt32(DateTime.Now.DayOfWeek.ToString("d"))].ToString();
             week += (",今年的第" + DateTime.Now.DayOfYear + "天");
             CurrentWeekTimeStr = week;
+
+
+            if (IsSettingOpen)
+            {
+                UpdateCacheSize();
+            }
 
 
             //update background views 
@@ -305,6 +337,7 @@ namespace DesktopTimer.models.displayModel
 
                 CheckToFillBackgroundCache();
             }
+
         }
 
         #endregion
@@ -316,8 +349,9 @@ namespace DesktopTimer.models.displayModel
         private ICommand? openSettingCommand = null;
         public ICommand OpenSettingCommand
         {
-            get=>openSettingCommand??(openSettingCommand = new RelayCommand(() =>
+            get => openSettingCommand ?? (openSettingCommand = new RelayCommand(() =>
             {
+                UpdateCacheSize();
                 IsSettingOpen = true;
             }));
         }
@@ -335,36 +369,53 @@ namespace DesktopTimer.models.displayModel
         private ICommand? requestFlushCommand = null;
         public ICommand RequestFlushCommand
         {
-            get=>requestFlushCommand??(requestFlushCommand = new RelayCommand(() => 
+            get => requestFlushCommand ?? (requestFlushCommand = new RelayCommand(() =>
             {
+                CurCountDown = 0;
                 FreshCurrentImage();
             }));
         }
 
 
-        private ICommand? setBackgroundfreshCommand= null;
+        private ICommand? setBackgroundfreshCommand = null;
         public ICommand SetBackgroundfreshCommand
         {
-            get=>setBackgroundfreshCommand ??(setBackgroundfreshCommand = new RelayCommand(() => {
+            get => setBackgroundfreshCommand ?? (setBackgroundfreshCommand = new RelayCommand(() =>
+            {
 
                 ShouldPauseFresh = !ShouldPauseFresh;
             }));
         }
 
+        private ICommand? clearCacheCommand;
+        public ICommand ClearCacheCommand
+        {
+            get => clearCacheCommand ?? (clearCacheCommand = new RelayCommand(() =>
+            {
+                EmptyCache();
+                BackgroundImageLists.Clear();
+                CheckToFillBackgroundCache();
+            }));
+        }
         #endregion
 
         #region methods
 
+        public void UpdateCacheSize()
+        {
+            CacheSize = (FileMapper.NormalPictureDir.GetDirectorySize() / 1024 / 1024.0).ToString("0.00") + "MB";
+        }
+
         public void Initilize()
         {
-            WeakReferenceMessenger.Default.Register<TimeUpdateMessage>(this, (t, message) => 
+            WeakReferenceMessenger.Default.Register<TimeUpdateMessage>(this, (t, message) =>
             {
                 MainModelInstance_TimerHandler();
             });
 
-            WeakReferenceMessenger.Default.Register<BackgroundSourceUpdateMessage>(this, (t, message) => 
+            WeakReferenceMessenger.Default.Register<BackgroundSourceUpdateMessage>(this, (t, message) =>
             {
-                if(message?.Value!=null&&message.Value.IsFileExist())
+                if (message?.Value != null && message.Value.IsFileExist())
                 {
                     AddBackgroundImageCache(message.Value);
                 }
@@ -377,8 +428,9 @@ namespace DesktopTimer.models.displayModel
 
         public async void FreshCurrentImage()
         {
+
             var cur = BackgroundImageLists.FirstOrDefault();
-            if(cur==null|| ShouldPauseFresh)
+            if (cur == null || ShouldPauseFresh)
                 return;
             BackgroundView = await ImageTool.LoadImg(cur);
             BackgroundImageLists.Remove(cur);
@@ -390,8 +442,9 @@ namespace DesktopTimer.models.displayModel
         /// <param name="path"></param>
         public void AddBackgroundImageCache(string path)
         {
-            backgroundImageLists.Add(path);
-            if(BackgroundView==null)
+            if (!BackgroundImageLists.Contains(path))
+                BackgroundImageLists.Add(path);
+            if (BackgroundView == null)
             {
                 FreshCurrentImage();
             }
@@ -412,10 +465,26 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         private void CheckToFillBackgroundCache()
         {
-            if(BackgroundImageLists.Count>=MaxCacheCount )
+            if (BackgroundImageLists.Count >= MaxCacheCount)
                 return;//no need for cache
             WeakReferenceMessenger.Default.Send(new RequestFillBackgroundMessage((int)(MaxCacheCount - BackgroundImageLists.Count)));
         }
+
+        /// <summary>
+        /// clear cache directory
+        /// </summary>
+        void EmptyCache()
+        {
+            try
+            {
+                Directory.Delete(FileMapper.NormalPictureDir, true);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+        }
+
         #endregion
     }
 }

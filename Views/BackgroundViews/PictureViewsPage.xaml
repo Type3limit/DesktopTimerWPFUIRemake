@@ -2,6 +2,7 @@
     x:Class="DesktopTimer.Views.BackgroundViews.PictureViewsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:control="clr-namespace:DesktopTimer.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -30,12 +31,11 @@
             Opacity="{Binding DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}"
             SnapsToDevicePixels="True" />
 
+
         <Image
             x:Name="CurImage"
             Panel.ZIndex="9"
-            RenderOptions.BitmapScalingMode="HighQuality"
-            RenderOptions.CacheInvalidationThresholdMaximum="16"
-            RenderOptions.CacheInvalidationThresholdMinimum="1"
+            Opacity="{Binding DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}"
             RenderOptions.CachingHint="Cache"
             RenderOptions.ClearTypeHint="Auto"
             RenderOptions.EdgeMode="Aliased"

@@ -31,6 +31,10 @@ namespace DesktopTimer
             Initilize();
             Loaded += MainWindow_Loaded;
             DataContextChanged += MainWindow_DataContextChanged;
+            WeakReferenceMessenger.Default.Register<RequestCloseProgramMessage>(this, (o, e) =>
+            {
+                Environment.Exit(0);
+            });
         }
 
         private void MainWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -57,10 +61,6 @@ namespace DesktopTimer
             }
         }
 
-        private void CloseProgram_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
 
         private void Initilize()
         {
@@ -68,6 +68,14 @@ namespace DesktopTimer
             {
                 ModelInstance?.DisplaySetting?.CloseSettingCommand?.Execute(null);
             };
+        }
+
+        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu con)
+            {
+                con.DataContext = this.DataContext;
+            }
         }
     }
 }

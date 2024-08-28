@@ -39,8 +39,13 @@ namespace DesktopTimer.Helpers
         }
     }
 
+    /// <summary>
+    /// To request close current app
+    /// </summary>
+    public class RequestCloseProgramMessage : TypedMessage<object>
+    { }
 
-    
+
     /// <summary>
     /// To notify time update
     /// </summary>
@@ -63,5 +68,15 @@ namespace DesktopTimer.Helpers
         }
     }
 
+    /// <summary>
+    /// To notify abandon currnet background image cacahe
+    /// </summary>
+    public class RequestAbandonCurrentCacheMessage:TypedMessage<int>
+    {
+        public RequestAbandonCurrentCacheMessage(int step)
+        {
+
+        }
+    }
 
 }

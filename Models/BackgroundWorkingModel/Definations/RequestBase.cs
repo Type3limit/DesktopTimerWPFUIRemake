@@ -1,13 +1,26 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using DesktopTimer.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
+    public enum RequestBaseUseage
+    {
+        NormalRequest,
+        PictureBackground,
+        VideoBackground,
+        WebsiteBackground
+    }
+
     public  class ResponseBase : ObservableObject
     {
     }
@@ -20,6 +33,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
     {
         public abstract Type Type { get; }
 
+        public virtual RequestBaseUseage RequestUseage  => RequestBaseUseage.NormalRequest;
         /// <summary>
         /// url of current request
         /// </summary>
@@ -44,7 +58,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         /// build query
         /// </summary>
         /// <returns></returns>
-        abstract public RequestQueryBase? BuildQuery(params object[]? objs);
+        abstract public RequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs);
         /// <summary>
         /// send request
         /// </summary>
@@ -57,7 +71,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         /// </summary>
         /// <param name="currentResponse"></param>
         /// <returns></returns>
-        abstract public IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse);
+        abstract public IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, CancellationToken canceller);
 
         /// <summary>
         /// mark if current response is last page
@@ -65,5 +79,19 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         /// <param name="currentResponse"></param>
         /// <returns></returns>
         abstract public bool HasReachedEnd(ResponseBase? currentResponse);
+
+
+        protected ICommand? requestNewQueryCommand = null;
+        /// <summary>
+        /// update current query
+        /// </summary>
+        public virtual ICommand RequestNewQueryCommand
+        {
+            get => requestNewQueryCommand ?? (requestNewQueryCommand = new RelayCommand(() =>
+            {
+                WeakReferenceMessenger.Default.Send(new RequestAbandonCurrentCacheMessage(0));
+                WeakReferenceMessenger.Default.Send(new RequestAbandonCurrentCacheMessage(1));
+            }));
+        }
     }
 }

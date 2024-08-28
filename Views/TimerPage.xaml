@@ -95,7 +95,10 @@
 
     <Page.ContextMenu>
         <ContextMenu>
-
+            <ui:MenuItem
+                x:Name="OpenSetting"
+                Command="{Binding DisplaySetting.OpenSettingCommand}"
+                Header="打开设置" />
             <ui:MenuItem
                 x:Name="NextBackground"
                 Command="{Binding DisplaySetting.RequestFlushCommand}"
@@ -104,10 +107,7 @@
             <ui:MenuItem Command="{Binding DisplaySetting.SetBackgroundfreshCommand}">
                 <ui:MenuItem.Header>
                     <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
-                        <ui:ToggleSwitch
-                            Foreground="White"
-                            IsChecked="{Binding DisplaySetting.ShouldPauseFresh, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            IsEnabled="False" />
+                        <ui:ToggleSwitch Foreground="White" IsChecked="{Binding DisplaySetting.ShouldPauseFresh, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <TextBlock
                             Margin="5,0"
                             VerticalAlignment="Center"
@@ -116,13 +116,10 @@
                 </ui:MenuItem.Header>
             </ui:MenuItem>
 
-            <ui:MenuItem
-                x:Name="OpenSetting"
-                Command="{Binding DisplaySetting.OpenSettingCommand}"
-                Header="打开设置" />
+
             <ui:MenuItem
                 x:Name="CloseProgram"
-                Click="CloseProgram_Click"
+                Command="{Binding ExitProgramCommand}"
                 Header="关闭程序" />
 
         </ContextMenu>

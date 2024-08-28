@@ -4,9 +4,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using Flurl.Http;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
@@ -291,6 +295,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         public override Type Type => typeof(WallHavenRequest);
 
+        public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
+
         private bool isGeneralEnable = false;
         public bool IsGeneralEnable
         {
@@ -374,16 +380,19 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         [JsonIgnore]
         public override string RequestUrl => @"https://wallhaven.cc/api/v1/search";
 
+
+        List<string> downloadTask = new List<string>();
+
         public override void ResetRequest()
         {
             CurPage = 0;
             TotalPage = 1;
             IsGeneralEnable = false;
             IsAnimationEnable = true;
-            IsPeopleEnable= false;
+            IsPeopleEnable = false;
         }
 
-        public override RequestQueryBase? BuildQuery(params object[]? objs)
+        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs)
         {
             var query = new WallhavenRequestQuery();
             query.atleast = "";
@@ -399,65 +408,65 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             query.purity.none = false;
             query.purity.sfw = true;
             query.purity.sketchy = true;
-            query.page = CurPage + 1;
+            query.page = AutoIncreasePage?CurPage+1:CurPage;
+            
             if (!string.IsNullOrEmpty(WallHavenSearchKeyWords))
                 query.queryCore.addTags = new List<string>() { WallHavenSearchKeyWords };
 
             return query;
         }
 
-        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse)
-        {
 
-            if (!(currentResponse is WallhavenResponse))
-                yield return null;
-            var response = currentResponse as WallhavenResponse;
-            if (response == null || response.meta == null)
-                yield return null;
-#pragma warning disable CS8602 // 解引用可能出现空引用。
+        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation] CancellationToken token)
+        {
+            if (!(currentResponse is WallhavenResponse response) || response.meta == null)
+                yield break;
+
             TotalPage = response.meta.last_page;
             CurPage = response.meta.current_page;
+
             if (response.data != null)
             {
                 foreach (var x in response.data)
                 {
+                    if (token.IsCancellationRequested)
+                        yield break;
 
                     if (string.IsNullOrEmpty(x?.path))
                         continue;
-                    Guid guid = Guid.NewGuid();
-                    var curFileName = x.id;//DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
+
+                    var curFileName = x.id;
                     var exten = "." + x?.file_type?.Split('/').LastOrDefault();
-                    string res = "";
                     var totalPath = FileMapper.NormalPictureDir.PathCombine(curFileName + exten);
+
                     try
                     {
-                        
-                        if(!totalPath.IsFileExist())
+                        if (!totalPath.IsFileExist())
                         {
                             if (x != null)
-                                res = await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten,
-                                    4096);
-                        }
+                            {
+                                var totalFile = curFileName + exten;
+                                if (downloadTask.Contains(totalFile))
+                                    continue;
 
+                                downloadTask.Add(totalFile);
+                                await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten, 4096);
+                                downloadTask.Remove(totalFile);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
                         Trace.WriteLine(ex);
                     }
 
-                    if (!totalPath.IsFileExist())
-                        continue;
-#pragma warning restore CS8602 // 解引用可能出现空引用。
-                    yield return totalPath;
+                    if (totalPath.IsFileExist())
+                        yield return totalPath;
                 }
             }
-            else
-            {
-
-                yield return null;
-            }
-
         }
+
+
 
         public override async Task<ResponseBase?> Request(RequestQueryBase? query)
         {
@@ -478,6 +487,12 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                 return false;
             return response.meta.current_page == response.meta.last_page;
         }
+
+        #region command 
+
+
+
+        #endregion
     }
 
     #endregion

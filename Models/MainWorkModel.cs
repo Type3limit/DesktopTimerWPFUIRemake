@@ -1,13 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
 using DesktopTimer.Models.BackgroundWorkingModel;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks; 
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace DesktopTimer.models
 {
@@ -49,6 +53,22 @@ namespace DesktopTimer.models
 
         #endregion
 
+
+        #region command 
+        private ICommand? exitProgramCommand;
+        /// <summary>
+        /// To exit current app
+        /// </summary>
+        public ICommand ExitProgramCommand
+        {
+            get => exitProgramCommand ?? (exitProgramCommand = new RelayCommand(() =>
+            {
+                WeakReferenceMessenger.Default.Send(new RequestCloseProgramMessage());
+            }));
+        }
+
+
+        #endregion
 
         #region methods
         System.Timers.Timer? timer = null;

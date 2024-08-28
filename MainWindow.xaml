@@ -35,7 +35,7 @@
     mc:Ignorable="d">
 
     <Window.DataContext>
-        <model:MainWorkModel />
+        <model:MainWorkModel x:Name="mainWorkModel" />
     </Window.DataContext>
 
     <Border
@@ -51,7 +51,11 @@
                 IsOpen="{Binding DisplaySetting.IsSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 Placement="Center">
                 <Border>
-                    <backView:SettingControl x:Name="SettingControl" DataContext="{Binding ElementName=mainWindow, Path=DataContext}" />
+                    <backView:SettingControl
+                        x:Name="SettingControl"
+                        MaxWidth="{Binding ElementName=mainWindow, Path=ActualWidth}"
+                        MaxHeight="{Binding ElementName=mainWindow, Path=ActualHeight}"
+                        DataContext="{Binding ElementName=mainWorkModel}" />
                 </Border>
             </ui:Flyout>
 
@@ -63,7 +67,7 @@
                 MenuOnRightClick="True"
                 TooltipText="DesktopTimer">
                 <tray:NotifyIcon.Menu>
-                    <ContextMenu>
+                    <ContextMenu Opened="ContextMenu_Opened">
                         <ui:MenuItem x:Name="MenuLabel" IsEnabled="false">
                             <ui:MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -71,19 +75,19 @@
                                         Width="20"
                                         Height="20"
                                         Source="pack://application:,,,/Assets/Timer.png" />
-                                    <TextBlock FontSize="20" Text="标题测试" />
+                                    <TextBlock FontSize="20" Text="DesktopTimer" />
                                 </StackPanel>
                             </ui:MenuItem.Header>
                         </ui:MenuItem>
                         <ui:MenuItem
                             x:Name="ExitProgram"
-                            Click="CloseProgram_Click"
+                            Command="{Binding ExitProgramCommand}"
                             Header="退出" />
                     </ContextMenu>
                 </tray:NotifyIcon.Menu>
             </tray:NotifyIcon>
-            
-            
+
+
             <Frame x:Name="ContentFrame" />
         </Grid>
 

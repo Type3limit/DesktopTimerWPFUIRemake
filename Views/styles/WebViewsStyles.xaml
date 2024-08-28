@@ -4,84 +4,119 @@
     xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
     xmlns:model="clr-namespace:DesktopTimer.models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <Style x:Key="WebsiteSubSettingPageStyle" TargetType="ContentControl">
-        <Style.Resources>
-            <DataTemplate DataType="{x:Type def:WallHavenRequest}">
-                <Border>
-                    <ui:DynamicScrollViewer>
-                        <StackPanel Orientation="Vertical">
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
 
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Text="搜索关键字：" />
-                                <TextBox
-                                    Width="{Binding WindowWidth, ConverterParameter=6}"
-                                    BorderThickness="0"
-                                    Text="{Binding WallHavenSearchKeyWords, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-
-                            </StackPanel>
-
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Text="页数：" />
-
-                                <ui:NumberBox
-                                    FontSize="12"
-                                    Maximum="{Binding TotalPage}"
-                                    Minimum="1"
-                                    Value="{Binding CurPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock
-                                    Margin="10,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Text="/" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Text="{Binding TotalPage}" />
-                            </StackPanel>
-
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock FontSize="12" Text="条目筛选：" />
-                                <CheckBox Content="通常" IsChecked="{Binding IsGeneralEnable, Mode=TwoWay}" />
-                                <CheckBox Content="动漫" IsChecked="{Binding IsAnimationEnable, Mode=TwoWay}" />
-                                <CheckBox Content="真人" IsChecked="{Binding IsPeopleEnable, Mode=TwoWay}" />
-                            </StackPanel>
-
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Text="热度排序:" />
-                                <ComboBox
-                                    BorderThickness="0"
-                                    ItemsSource="{Binding OrderLists}"
-                                    SelectedItem="{Binding SelectedOrder, Mode=TwoWay}" />
-                            </StackPanel>
-
-                            <ui:Button
-                                x:Name="StartSearchButton"
-                                Margin="10,10"
-                                Content="搜索" />
-                        </StackPanel>
-                    </ui:DynamicScrollViewer>
-                </Border>
-            </DataTemplate>
-        </Style.Resources>
-        <Style.Setters>
-            <Setter Property="ContentTemplate">
-                <Setter.Value>
-                    <DataTemplate>
-                        <ContentPresenter />
-                    </DataTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style.Setters>
+    <Style x:Key="labelTextBlock" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Width" Value="100" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Left" />
     </Style>
+
+    <DataTemplate DataType="{x:Type def:WallHavenRequest}">
+        <Border>
+            <StackPanel Orientation="Vertical">
+                <TextBlock
+                    Width="Auto"
+                    FontSize="18"
+                    Style="{StaticResource labelTextBlock}"
+                    Text="WallHaven搜索关联项：" />
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <ui:TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource labelTextBlock}"
+                        Text="搜索关键字：" />
+                    <ui:TextBox
+                        MinWidth="100"
+                        BorderThickness="0"
+                        Text="{Binding WallHavenSearchKeyWords, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <ui:TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource labelTextBlock}"
+                        Text="页数：" />
+
+                    <ui:NumberBox
+                        FontSize="12"
+                        Maximum="{Binding TotalPage}"
+                        Minimum="1"
+                        Value="{Binding CurPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <ui:TextBlock
+                        Margin="10,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Text="/" />
+                    <ui:TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Text="{Binding TotalPage}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <ui:TextBlock Style="{StaticResource labelTextBlock}" Text="条目筛选：" />
+                    <CheckBox Content="通常" IsChecked="{Binding IsGeneralEnable, Mode=TwoWay}" />
+                    <CheckBox Content="动漫" IsChecked="{Binding IsAnimationEnable, Mode=TwoWay}" />
+                    <CheckBox Content="真人" IsChecked="{Binding IsPeopleEnable, Mode=TwoWay}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <ui:TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource labelTextBlock}"
+                        Text="热度排序:" />
+                    <ComboBox
+                        BorderThickness="0"
+                        ItemsSource="{Binding OrderLists}"
+                        SelectedItem="{Binding SelectedOrder, Mode=TwoWay}" />
+                </StackPanel>
+
+                <ui:Button
+                    x:Name="StartSearchButton"
+                    Margin="10,10"
+                    Command="{Binding RequestNewQueryCommand}"
+                    Content="搜索" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+
+    <DataTemplate DataType="{x:Type def:LocalBackground}">
+        <StackPanel>
+            <StackPanel Margin="0,5" Orientation="Horizontal">
+                <ui:TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource labelTextBlock}"
+                    Text="本地背景路径：" />
+                <ui:TextBox
+                    MinWidth="100"
+                    Margin="0,0,10,0"
+                    BorderThickness="0"
+                    Text="{Binding LocalFileLoadPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel Margin="0,5" Orientation="Horizontal">
+                <ui:TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource labelTextBlock}"
+                    Text="搜索关键字：" />
+                <ui:TextBox
+                    MinWidth="100"
+                    Margin="0,0,10,0"
+                    BorderThickness="0"
+                    Text="{Binding KeyWords, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <ui:Button
+                x:Name="StartSearchButton"
+                Margin="10,10"
+                Command="{Binding RequestNewQueryCommand}"
+                Content="加载" />
+        </StackPanel>
+    </DataTemplate>
+
 </ResourceDictionary>

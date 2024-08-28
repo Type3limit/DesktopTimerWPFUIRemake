@@ -1,8 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using DesktopTimer.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -14,6 +16,9 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
     {
         [ObservableProperty]
         int page = 0;
+
+        [ObservableProperty]
+        string keyWords = "";
     }
     public partial class LocalFileResponse:ResponseBase
     {
@@ -23,6 +28,9 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
     public partial class LocalBackground : RequestBase
     {
+        public override Type Type => typeof(LocalBackground);
+
+        public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
 
         #region properties
         [JsonIgnore]
@@ -43,25 +51,31 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         [JsonPropertyName("LocalPath")]
         [ObservableProperty]
-        public string localFileLoadPath = "";
+        string localFileLoadPath = "";
 
         [JsonIgnore]
         List<string> LocalFiles = new List<string>();
 
-        #endregion
+        [JsonPropertyName("KeyWords")]
+        [ObservableProperty]
+        string keyWords = "";
 
-        public override Type Type => typeof(LocalBackground);
+        #endregion
 
 
         public override void ResetRequest()
         {
-            CurPage = -1;
+            CurPage = 0;
             LocalFileCount = 0;
         }
 
-        public override RequestQueryBase? BuildQuery(params object[]? objs)
+        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage, params object[]? objs)
         {
-            return new LocalFileQuery(){ Page = CurPage + 1};
+            return new LocalFileQuery()
+            {
+                Page = AutoIncreasePage?CurPage + 1:CurPage,
+                KeyWords = this.KeyWords
+            };
         }
 
 
@@ -79,29 +93,36 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                 LocalFiles = Directory.EnumerateFiles(LocalFileLoadPath, @"\.png$|\.jpg$|\.jpeg$|\.bmp$", SearchOption.AllDirectories).ToList();
             }
 
-            response.Files = LocalFiles.Skip(localQuery.Page * PageSize).Take(PageSize).ToList();
+            var resultList = LocalFiles;
+            if(!localQuery.KeyWords.IsNullOrEmpty())
+            {
+                resultList = LocalFiles.Where(x=>x.Contains(KeyWords)||KeyWords.Contains(x)).ToList();
+            }
+
+            response.Files = resultList.Skip(localQuery.Page * PageSize).Take(PageSize).ToList();
 
             return Task.FromResult<ResponseBase?>(response);
         }
 
-        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse)
+        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation]CancellationToken canceller)
         {
             if (!(currentResponse is LocalFileResponse))
-                yield return null;
+                yield break;
             var response = currentResponse as LocalFileResponse;
             if (response == null || response.Files == null)
-                yield return null;
+                yield break;
             if(response.Files.Count>0)
             {
                 foreach (var x in response.Files)
                 {
+                    if(canceller.IsCancellationRequested)
+                    {
+                        yield break;
+                    }
                     yield return await Task.FromResult<string>(x);
                 }
             }
-            else
-            {
-                yield return null;
-            }
+
         }
 
         public override bool HasReachedEnd(ResponseBase? currentResponse)
