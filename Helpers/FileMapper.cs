@@ -12,6 +12,8 @@ namespace DesktopTimer.Helpers
     /// </summary>
     public class FileMapper
     {
+
+        #region dir
         /// <summary>
         /// 图片缓存目录
         /// </summary>
@@ -111,27 +113,15 @@ namespace DesktopTimer.Helpers
             }
         }
 
-        /// <summary>
-        /// 模块json配置路径
-        /// </summary>
-        public static string ModelsJson
-        {
-            get
-            {
-                string currentFile = Path.Combine(ConfigureDir, "Models.Json");
-                if (!File.Exists(currentFile))
-                    File.Create(currentFile).Close();
-                return currentFile;
-            }
-        }
+       
         /// <summary>
         /// 网址记录json路径
         /// </summary>
-        public static string WebSiteJson
+        public static string BackTypesJson
         {
             get
             {
-                string currentFile = Path.Combine(ConfigureDir, "Webs.Json");
+                string currentFile = Path.Combine(ConfigureDir, "BackgroundTypes.Json");
                 if (!File.Exists(currentFile))
                     File.Create(currentFile).Close();
                 return currentFile;
@@ -212,6 +202,10 @@ namespace DesktopTimer.Helpers
                 return currentDir;
             }
         }
+
+        #endregion
+
+        #region file
         private static string currentLogFile = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
         /// <summary>
         /// 当前日志文件
@@ -238,6 +232,39 @@ namespace DesktopTimer.Helpers
                 return currentDir;
             }
         }
+
+        /// <summary>
+        /// 程序配置文件
+        /// </summary>
+        public static string ProgramSettingFile
+        {
+            get
+            {
+                var file = ConfigureDir.PathCombine("ProgramSetting.json");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+        /// <summary>
+        /// 用户配置文件
+        /// </summary>
+        public static string UserConfigureFile
+        {
+            get
+            {
+                var file = ConfigureDir.PathCombine("UserSetting.json");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+
+        #endregion
     }
 
 }

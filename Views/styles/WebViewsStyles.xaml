@@ -7,7 +7,7 @@
 
     <Style x:Key="labelTextBlock" TargetType="{x:Type TextBlock}">
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="Width" Value="100" />
+        <Setter Property="Width" Value="160" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextAlignment" Value="Left" />
     </Style>

@@ -52,7 +52,14 @@ namespace DesktopTimer.models.displayModel
 
         #region Timer
 
-        private double timerBackgroundWidth = 0.25;
+        private double timerBackgroundOpacity = 1;
+        public double TimerBackgroundOpacity
+        {
+            get=>timerBackgroundOpacity;
+            set=>SetProperty(ref timerBackgroundOpacity,value);
+        }
+
+        private double timerBackgroundWidth = 0.35;
         /// <summary>
         /// Timer background width
         /// </summary>
@@ -127,15 +134,19 @@ namespace DesktopTimer.models.displayModel
 
         }
 
-
-        private CornerRadius timerBackgroundCornorRadius = new CornerRadius(6);
-        /// <summary>
-        /// Timer background radius
-        /// </summary>
+        private int timerBackgroundCornorRadiusValue = 6;
+        public int TimerBackgroundCornorRadiusValue
+        {
+            get => timerBackgroundCornorRadiusValue;
+            set
+            {
+                SetProperty(ref timerBackgroundCornorRadiusValue, value);
+                OnPropertyChanged("TimerBackgroundCornorRadius");
+            }
+        }
         public CornerRadius TimerBackgroundCornorRadius
         {
-            get => timerBackgroundCornorRadius;
-            set => SetProperty(ref timerBackgroundCornorRadius, value);
+            get => new CornerRadius(TimerBackgroundCornorRadiusValue);
         }
 
 
@@ -194,7 +205,27 @@ namespace DesktopTimer.models.displayModel
         static string[] Day = new string[] { "星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六" };
         #endregion
 
+
+
         #region Background
+
+        private int backgroundCornerRadiusValue = 15;
+        public int BackgroundCornerRadiusValue
+        {
+            get=>backgroundCornerRadiusValue;
+            set
+            {
+                SetProperty(ref backgroundCornerRadiusValue, value);
+                OnPropertyChanged("BackgroundCornerRadius");
+            }
+        }
+
+        public CornerRadius BackgroundCornerRadius
+        {
+            get=>
+                new CornerRadius(BackgroundCornerRadiusValue);
+            
+        }
 
         private double backgroundImageOpacity = 1d;
         /// <summary>
@@ -359,7 +390,7 @@ namespace DesktopTimer.models.displayModel
         private ICommand? closeSettingCommand = null;
         public ICommand CloseSettingCommand
         {
-            get => openSettingCommand ?? (openSettingCommand = new RelayCommand(() =>
+            get => closeSettingCommand ?? (closeSettingCommand = new RelayCommand(() =>
             {
                 IsSettingOpen = false;
             }));

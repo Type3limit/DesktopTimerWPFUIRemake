@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\DS-DIGI.TTF" />
     <None Remove="Assets\Timer.ico" />
     <None Remove="Assets\Timer.png" />
   </ItemGroup>
@@ -35,6 +36,7 @@
     <PackageReference Include="Flurl" Version="4.0.0" />
     <PackageReference Include="Flurl.Http" Version="4.0.2" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 
@@ -48,6 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\DS-DIGI.TTF" />
     <Resource Include="Assets\Timer.ico" />
     <Resource Include="Assets\Timer.png" />
   </ItemGroup>

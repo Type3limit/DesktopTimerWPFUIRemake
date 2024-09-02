@@ -60,7 +60,7 @@ namespace DesktopTimer.Views.BackgroundViews
                 {
                     var targetOpacity = model.DisplaySetting.BackgroundImageOpacity;
                     var curAnimiation = new DoubleAnimation(0.0, targetOpacity, TimeSpan.FromSeconds(0.5));
-                    CurBorder.BeginAnimation(Border.OpacityProperty, curAnimiation);
+                    CurImage.BeginAnimation(Wpf.Ui.Controls.Image.OpacityProperty, curAnimiation);
                 });
             }
         }

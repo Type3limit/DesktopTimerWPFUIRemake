@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
 
@@ -25,6 +27,27 @@ namespace DesktopTimer.Helpers
         }
 
         object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class FontNameConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value != null && value is FontFamily font)
+            {
+                return font.ToString();
+            }
+            else if (value is LanguageSpecificStringDictionary lssd)
+            {
+                return lssd?.Values?.FirstOrDefault();
+            }
+            return Binding.DoNothing;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return Binding.DoNothing;
         }
@@ -156,6 +179,25 @@ namespace DesktopTimer.Helpers
                 return curVar;
             }
             return 0;
+        }
+    }
+
+
+    public class EnumDisplayNameConverter : MarkupExtension, IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return ((Enum)value).GetAttributeOfType<DisplayAttribute>().Name;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override object ProvideValue(IServiceProvider serviceProvider)
+        {
+            return this;
         }
     }
 }

@@ -16,6 +16,8 @@ using Appearance = Wpf.Ui.Appearance;
 using DesktopTimer.models;
 using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
+using System.Windows.Shell;
+using Wpf.Ui.Interop;
 namespace DesktopTimer
 {
     /// <summary>
@@ -36,6 +38,7 @@ namespace DesktopTimer
                 Environment.Exit(0);
             });
         }
+
 
         private void MainWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -64,10 +67,7 @@ namespace DesktopTimer
 
         private void Initilize()
         {
-            SettingFlyout.Closed += (o, e) => 
-            {
-                ModelInstance?.DisplaySetting?.CloseSettingCommand?.Execute(null);
-            };
+
         }
 
         private void ContextMenu_Opened(object sender, RoutedEventArgs e)

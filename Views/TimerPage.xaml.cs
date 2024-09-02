@@ -1,4 +1,7 @@
-﻿using DesktopTimer.models;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using DesktopTimer.Helpers;
+using DesktopTimer.models;
+using DesktopTimer.Models.BackgroundWorkingModel.Definations;
 using DesktopTimer.Views.BackgroundViews;
 using System;
 using System.Collections.Generic;
@@ -28,24 +31,86 @@ namespace DesktopTimer.Views
 
         object? lastContent = null;
 
+        PictureViewsPage? picturePage = null;
+
+        UpperLayerPage? upperLayerPage = null;
+
         public TimerPage()
         {
             InitializeComponent();
             Loaded += TimerPage_Loaded;
+            Unloaded += TimerPage_Unloaded;
             DataContextChanged += TimerPage_DataContextChanged;
         }
-
         private void TimerPage_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             modelInstance = e.NewValue as MainWorkModel;
         }
 
+        private void TimerPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            WeakReferenceMessenger.Default.Unregister<RequestModelChangedMessage>(this);
+        }
+
+
         private void TimerPage_Loaded(object sender, RoutedEventArgs e)
         {
-            var picturesView = new PictureViewsPage();
-            picturesView.MouseMoveHandler += PicturesView_MouseMoveHandler; ;
-            picturesView.DataContext = this.DataContext;
-            ContentFrame.Navigate(picturesView);
+            //default with picture page
+            CheckPicturePage();
+            ContentFrame.Navigate(picturePage);
+            CheckUpperLayerPage();
+            UpperLayerFrame.Navigate(upperLayerPage);
+            WeakReferenceMessenger.Default.Register<RequestModelChangedMessage>(this, (e, t) => 
+            {
+                OnSelectedRequestModelTypeChanged(t.Value);
+            });
+        }
+
+        void CheckUpperLayerPage()
+        {
+            if(upperLayerPage == null)
+            {
+                upperLayerPage = new UpperLayerPage();
+                upperLayerPage.DataContext = this.DataContext;
+            }
+        }
+
+        void CheckPicturePage()
+        {
+            if (picturePage == null)
+            {
+                picturePage = new PictureViewsPage();
+                picturePage.MouseMoveHandler += PicturesView_MouseMoveHandler; ;
+                picturePage.DataContext = this.DataContext;
+            }
+        }
+
+        void OnSelectedRequestModelTypeChanged(RequestBaseUseage curUseage)
+        {
+            switch (curUseage)
+            {
+                case RequestBaseUseage.NormalRequest:
+                    break;
+                case RequestBaseUseage.PictureBackground:
+                    {
+                        CheckPicturePage();
+                        ContentFrame.Navigate(picturePage);
+                        break;
+                    }
+
+                case RequestBaseUseage.VideoBackground:
+                    {
+                        //TODO:add video background page
+                        break;
+                    }
+
+                case RequestBaseUseage.WebsiteBackground:
+                    {
+                        //TODO: add website background page
+                        break;
+                    }
+
+            }
         }
 
         private void PicturesView_MouseMoveHandler(MouseEventArgs e)

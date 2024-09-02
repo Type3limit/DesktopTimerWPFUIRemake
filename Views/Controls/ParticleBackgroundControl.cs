@@ -1,6 +1,7 @@
 ﻿using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
@@ -65,7 +66,7 @@ namespace DesktopTimer.Views.Controls
     {
         public abstract List<Color> GetRandomBackgroundPreset(SpecificThemeMode themeMode = SpecificThemeMode.Auto);
 
-        public abstract System.Windows.Media.Brush GetBackgroundGradientBrush(List<Color> colorSets);
+        public abstract System.Windows.Media.Brush GetBackgroundGradientBrush(List<Color> colorSets,double opacity =1);
 
         public abstract Color GetRandomPaticlePointPreset(SpecificThemeMode themeMode = SpecificThemeMode.Auto);
 
@@ -204,7 +205,8 @@ namespace DesktopTimer.Views.Controls
 
 
         public static readonly DependencyProperty UseColorfulBackgroundProperty =
-            DependencyProperty.Register("UseColorfulBackground", typeof(bool), typeof(ParticleBackgroundControl), new PropertyMetadata(false, OnEnableColorfulBackgroundChanged));
+            DependencyProperty.Register("UseColorfulBackground", typeof(bool), typeof(ParticleBackgroundControl), 
+                new PropertyMetadata(false, OnEnableColorfulBackgroundChanged));
 
 
 
@@ -340,9 +342,19 @@ namespace DesktopTimer.Views.Controls
 
 
 
+        public double CornorRadius
+        {
+            get { return (double)GetValue(CornorRadiusProperty); }
+            set { SetValue(CornorRadiusProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CornorRadius.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CornorRadiusProperty =
+            DependencyProperty.Register("CornorRadius", typeof(double), typeof(ParticleBackgroundControl), new PropertyMetadata(4.0d));
+
+
+
         #endregion
-
-
 
         #region value change callback
 
@@ -460,7 +472,6 @@ namespace DesktopTimer.Views.Controls
         }
         #endregion
 
-
         public ParticleBackgroundControl()
         {
 
@@ -475,7 +486,6 @@ namespace DesktopTimer.Views.Controls
             PointUpdateTimer.Start();
         }
 
-
         private void PointUpdateTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             UpdateParticles();
@@ -486,10 +496,10 @@ namespace DesktopTimer.Views.Controls
             particles = new List<IParticle>();
             for (int i = 0; i < ParticleCount; i++)
             {
-                particles.Add(ParticleCreator());
+                var particle = ParticleCreator();
+                particles.Add(particle);
             }
         }
-
 
         private void UpdateBackgroundBrush()
         {
@@ -499,21 +509,26 @@ namespace DesktopTimer.Views.Controls
             OnBackgroundOpacity();
         }
 
-
         private void OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (particles == null || particles.Count <= 0 || ActualWidth <= 0 || ActualHeight <= 0)
                 return;
+
+            //QuadTree = new QuadTree(new Rect(0, 0, ActualWidth, ActualHeight));
+
             foreach (var particle in particles)
             {
                 particle.AdjustPosition(ActualWidth, ActualHeight);
+                //QuadTree.Insert(particle);
             }
 
         }
 
-
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+
+            //QuadTree = new QuadTree(new Rect(0, 0, Width, Height));
+
             InitializeParticles();
 
             drawingVisual = new DrawingVisual();
@@ -522,9 +537,7 @@ namespace DesktopTimer.Views.Controls
 
             CompositionTarget.Rendering += OnRendering;
 
-
         }
-
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
@@ -538,14 +551,11 @@ namespace DesktopTimer.Views.Controls
             visualHost.RemoveVisual(drawingVisual);
         }
 
-
         protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
         {
             base.OnMouseMove(e);
             // e.GetPosition(this);
         }
-
-
 
         private void OnRendering(object? sender, EventArgs e)
         {
@@ -553,7 +563,6 @@ namespace DesktopTimer.Views.Controls
             //UpdateParticles();
             DrawParticles();
         }
-
 
         #region drawing
         private void UpdateParticles()
@@ -564,6 +573,7 @@ namespace DesktopTimer.Views.Controls
             Parallel.ForEach(particles, (o) =>
             {
                 o.Update(ActualWidth, ActualHeight, mousePosition, distance, Attraction, UnLinkMousePosition);
+                //QuadTree?.UpdateParticle(o);
             });
         }
 
@@ -577,26 +587,32 @@ namespace DesktopTimer.Views.Controls
             using (var dc = drawingVisual.RenderOpen())
             {
                 // 设置背景色
-                dc.DrawRectangle(UseColorfulBackground ? backgroundBrush : new SolidColorBrush(Colors.Transparent),
-                    null, new Rect(0, 0, ActualWidth, ActualHeight));
+                dc.DrawRoundedRectangle(UseColorfulBackground ? backgroundBrush : new SolidColorBrush(Colors.Transparent),
+                    null, new Rect(0, 0, ActualWidth, ActualHeight),CornorRadius,CornorRadius);
 
                 //dc.DrawEllipse(new SolidColorBrush(Colors.Red),null,mousePosition,5,5);
                 if (particles != null)
                 {
-                    var quadTree = new QuadTree(new Rect(0, 0, ActualWidth, ActualHeight));
-                    foreach (var particle in particles)
-                    {
-                        quadTree?.Insert(particle);
-                    }
+
                     var ConnectionDistance = MaxConnectionDistance;
                     var MouseDistance = MaxMouseConnectionDistance;
                     var PointConnectionDistance = MaxPointConnection;
                     bool UseColorPointLine = UseColorfulPointLines;
                     var CurLineColor = ((SolidColorBrush)LineColor).Color;
+
+                    var quadTree= new QuadTree(new Rect(0,0,ActualWidth,ActualHeight));
+                    foreach(var particle in particles)
+                    {
+                        quadTree.Insert(particle);
+                    }
+
                     foreach (var particle in particles)
                     {
                         var searchArea = new Rect(particle.Position().X - ConnectionDistance, particle.Position().Y - ConnectionDistance,
                                                  2 * ConnectionDistance, 2 * ConnectionDistance);
+
+
+
                         var neighboringParticles = quadTree?.QueryRange(searchArea);
 
                         var connectionsMade = 0;
@@ -643,7 +659,6 @@ namespace DesktopTimer.Views.Controls
         }
 
         #endregion
-
 
     }
 
@@ -843,6 +858,8 @@ namespace DesktopTimer.Views.Controls
 
     public class QuadTree
     {
+        private readonly ReaderWriterLockSlim rwLock = new ReaderWriterLockSlim();
+
         private const int MaxParticlesPerNode = 4;
         private const int MaxDepth = 5;
 
@@ -859,53 +876,109 @@ namespace DesktopTimer.Views.Controls
 
         public void Insert(IParticle particle)
         {
-            if (!bounds.Contains(particle.Position()))
-                return;
+            rwLock.EnterWriteLock();
+            try
+            {
+                if (!bounds.Contains(particle.Position()))
+                    return;
 
-            if (particles.Count < MaxParticlesPerNode || MaxDepth == 0)
-            {
-                particles.Add(particle);
-            }
-            else
-            {
-                if (nodes == null)
+                if (particles.Count < MaxParticlesPerNode || MaxDepth == 0)
                 {
-                    Subdivide();
+                    particles.Add(particle);
                 }
+                else
+                {
+                    if (nodes == null)
+                    {
+                        Subdivide();
+                    }
+                    if (nodes != null)
+                    {
+                        foreach (var node in nodes)
+                        {
+                            node.Insert(particle);
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+
+        }
+
+        public void Remove(IParticle particle)
+        {
+            rwLock.EnterWriteLock();
+            try
+            {
+                if (!particles.Remove(particle) && nodes != null)
+                {
+                    foreach (var node in nodes)
+                    {
+                        node?.Remove(particle);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+        }
+
+        public void UpdateParticle(IParticle particle)
+        {
+            Remove(particle);
+            Insert(particle);
+        }
+
+        public List<IParticle>? QueryRange(Rect range)
+        {
+            rwLock.EnterReadLock();
+            try
+            {
+                var foundParticles = new List<IParticle>();
+
+                if (!bounds.IntersectsWith(range))
+                    return foundParticles;
+
+                foreach (var particle in particles)
+                {
+                    if (range.Contains(particle.Position()))
+                    {
+                        foundParticles.Add(particle);
+                    }
+                }
+
                 if (nodes != null)
                 {
                     foreach (var node in nodes)
                     {
-                        node.Insert(particle);
+                        foundParticles.AddRange(node.QueryRange(range));
                     }
                 }
-            }
-        }
 
-        public List<IParticle> QueryRange(Rect range)
-        {
-            var foundParticles = new List<IParticle>();
-
-            if (!bounds.IntersectsWith(range))
                 return foundParticles;
-
-            foreach (var particle in particles)
-            {
-                if (range.Contains(particle.Position()))
-                {
-                    foundParticles.Add(particle);
-                }
             }
-
-            if (nodes != null)
+            catch (Exception ex)
             {
-                foreach (var node in nodes)
-                {
-                    foundParticles.AddRange(node.QueryRange(range));
-                }
+                Trace.WriteLine(ex);
+                return null;
             }
-
-            return foundParticles;
+            finally
+            {
+                rwLock.ExitReadLock();
+            }
+            
         }
 
         private void Subdivide()
@@ -1055,7 +1128,7 @@ namespace DesktopTimer.Views.Controls
         /// </summary>
         /// <param name="colorSets"></param>
         /// <returns></returns>
-        public System.Windows.Media.Brush GetBackgroundGradientBrush(List<Color> colorSets)
+        public System.Windows.Media.Brush GetBackgroundGradientBrush(List<Color> colorSets, double opacity = 1)
         {
 
 
@@ -1085,7 +1158,7 @@ namespace DesktopTimer.Views.Controls
                 animation.EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut };
                 backgroundBrush.GradientStops[i].BeginAnimation(GradientStop.ColorProperty, animation);
             }
-
+            backgroundBrush.Opacity = opacity;
             return backgroundBrush;
         }
         /// <summary>

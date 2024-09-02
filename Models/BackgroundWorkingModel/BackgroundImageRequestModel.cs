@@ -56,6 +56,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             {
                 SetProperty(ref selectedRequest, value);
                 OnPropertyChanged("SelectedRequestInstance");
+                WeakReferenceMessenger.Default.Send(new RequestModelChangedMessage(SelectedRequestInstance?.RequestUseage??RequestBaseUseage.NormalRequest));
             }
         }
 
@@ -146,7 +147,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
         private void ReadWebTypes()
         {
-            var webConfig = FileMapper.WebSiteJson.ReadText();
+            var webConfig = FileMapper.BackTypesJson.ReadText();
             if (webConfig.IsNullOrEmpty())
                 return;
             JsonSerializerOptions opt = new JsonSerializerOptions()
@@ -165,9 +166,10 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             {
                 Converters = { new TypeJsonConverter() }
             };
-            using (var stream = System.IO.File.Open(FileMapper.WebSiteJson, System.IO.FileMode.OpenOrCreate))
+            using (var stream = System.IO.File.Open(FileMapper.BackTypesJson, System.IO.FileMode.OpenOrCreate))
             {
-                JsonSerializer.Serialize<Dictionary<string, Type>>(stream, requestTypes, opt);
+                stream.Flush();
+                JsonSerializer.Serialize(stream, requestTypes, opt);
             }
         }
 

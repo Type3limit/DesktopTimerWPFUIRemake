@@ -204,6 +204,7 @@ namespace DesktopTimer.Helpers
         {
             using (var Stream = File.Open(Path, FileMode.OpenOrCreate))
             {
+                Stream.Flush();
                 var curBytes = Encoding.UTF8.GetBytes(content);
                 Stream.Write(curBytes, 0, curBytes.Length);
             }
@@ -434,7 +435,7 @@ namespace DesktopTimer.Helpers
 
 
         #region AttachedProperty
-        private static ConcurrentDictionary<int, ConcurrentDictionary<CompareableWeakReference, ConcurrentDictionary<string, object?>>> AttachedRecoreds = 
+        private static ConcurrentDictionary<int, ConcurrentDictionary<CompareableWeakReference, ConcurrentDictionary<string, object?>>> AttachedRecoreds =
             new ConcurrentDictionary<int, ConcurrentDictionary<CompareableWeakReference, ConcurrentDictionary<string, object?>>>();
         /// <summary>
         /// Set any attached properties to an object
@@ -802,6 +803,22 @@ namespace DesktopTimer.Helpers
         }
 
         #endregion
+
+
+        /// <summary>
+        /// Gets an attribute on an enum field value
+        /// </summary>
+        /// <typeparam name="T">The type of the attribute you want to retrieve</typeparam>
+        /// <param name="enumVal">The enum value</param>
+        /// <returns>The attribute of type T that exists on the enum value</returns>
+        public static T GetAttributeOfType<T>(this Enum enumVal) where T : System.Attribute
+        {
+            var type = enumVal.GetType();
+            var memInfo = type.GetMember(enumVal.ToString());
+            var attributes = memInfo[0].GetCustomAttributes(typeof(T), false);
+            return (attributes.Length > 0) ? (T)attributes[0] : null;
+        }
+
     }
 
     public class CompareableWeakReference
@@ -862,7 +879,7 @@ namespace DesktopTimer.Helpers
             where TIn : class
             where TOut : class
         {
-            
+
             string key = string.Format("trans_exp_{0}_{1}", typeof(TIn).FullName, typeof(TOut).FullName);
 
             if (!_CacheDic.ContainsKey(key))
@@ -1114,12 +1131,12 @@ namespace DesktopTimer.Helpers
                     }
                     return bi;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Trace.WriteLine(ex);
                     return null;
                 }
-               
+
             });
         }
 

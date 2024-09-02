@@ -5,7 +5,9 @@
     xmlns:con="clr-namespace:DesktopTimer.Helpers"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
+    xmlns:ia="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="clr-namespace:DesktopTimer.models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -17,8 +19,14 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <ResourceDictionary>
-
+            <Style BasedOn="{StaticResource labelTextBlock}" TargetType="{x:Type TextBlock}">
+                <Setter Property="Width" Value="Auto" />
+            </Style>
             <con:PercentFormater x:Key="PercentFormmater" />
+            <con:BoolToVisiableConverters x:Key="bool2Visi" />
+            <con:FontNameConverter x:Key="FontFamilyCon" />
+            <con:BoolToReverseVisiableConverters x:Key="bool2RVisi" />
+            <con:EnumDisplayNameConverter x:Key="enumDisplayConverter" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Views/Styles/WebViewsStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
@@ -26,74 +34,958 @@
 
         </ResourceDictionary>
     </UserControl.Resources>
-    <ui:DynamicScrollViewer>
-        <StackPanel Orientation="Vertical">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="65" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Style="{StaticResource labelTextBlock}"
-                    Text="背景来源:" />
-                <ComboBox
-                    VerticalAlignment="Center"
-                    ItemsSource="{Binding BackgroundImageRequest.UseableRequest, UpdateSourceTrigger=PropertyChanged}"
-                    SelectedItem="{Binding BackgroundImageRequest.SelectedRequest, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <ui:Button
+            Grid.Row="0"
+            Margin="5,10"
+            HorizontalAlignment="Left"
+            Appearance="Transparent"
+            Command="{Binding DisplaySetting.CloseSettingCommand}"
+            Icon="{ui:SymbolIcon Symbol=ArrowLeft48}" />
+        <ui:DynamicScrollViewer Grid.Row="1">
+            <StackPanel Margin="10" Orientation="Vertical">
+
+                <ui:CardExpander Header="程序相关项">
+                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="收藏位置：" />
+                        <TextBox
+                            Margin="0,0,10,0"
+                            BorderThickness="0"
+                            Text="{Binding Config.ProgramConfigData.LocalCollectPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            x:Name="CheckLocalStorageButton"
+                            Command="{Binding OpenFolderCommand}"
+                            CommandParameter="Collect"
+                            Content="浏览" />
+                    </StackPanel>
+
+                </ui:CardExpander>
+
+                <ui:CardExpander Header="时间设置项">
+
+                    <StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间背景可见性：" />
+                            <ui:ToggleSwitch IsChecked="{Binding DisplaySetting.IsTimerBorderVisiable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间背景宽度(%)：" />
+                            <Slider
+                                BorderThickness="0"
+                                Maximum="1"
+                                Minimum="0.01"
+                                TickFrequency="0.01"
+                                Value="{Binding DisplaySetting.TimerBackgroundWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:TextBlock
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding DisplaySetting.TimerBackgroundWidth, StringFormat=N2}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间背景高度(%)：" />
+                            <Slider
+                                BorderThickness="0"
+                                Maximum="1"
+                                Minimum="0.01"
+                                TickFrequency="0.01"
+                                Value="{Binding DisplaySetting.TimerBackgroundHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:TextBlock
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding DisplaySetting.TimerBackgroundHeight, StringFormat=N2}" />
+                        </StackPanel>
+
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间背景圆角：" />
+                            <Slider
+                                BorderThickness="0"
+                                Maximum="90"
+                                Minimum="0"
+                                TickFrequency="1"
+                                Value="{Binding DisplaySetting.TimerBackgroundCornorRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:TextBlock
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding DisplaySetting.TimerBackgroundCornorRadiusValue}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间背景颜色：" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimerBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间字体设置：" />
+                            <ComboBox
+                                BorderThickness="0"
+                                ItemsSource="{Binding DisplaySetting.FontFamilies, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding DisplaySetting.SelectedFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                VirtualizingPanel.IsVirtualizing="True">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontFamily="{Binding}"
+                                            Foreground="White"
+                                            Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间字体大小：" />
+                            <Slider
+                                BorderThickness="0"
+                                Maximum="256"
+                                Minimum="10"
+                                Value="{Binding DisplaySetting.TimeCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding TimeCenterFontSize}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="时间字体颜色：" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimeFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="星期字体设置：" />
+                            <ComboBox
+                                BorderThickness="0"
+                                ItemsSource="{Binding DisplaySetting.FontFamilies, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding DisplaySetting.SelectedWeekendFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                VirtualizingPanel.IsVirtualizing="True">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontFamily="{Binding}"
+                                            Foreground="White"
+                                            Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="星期字体大小：" />
+                            <Slider
+                                BorderThickness="0"
+                                Maximum="256"
+                                Minimum="10"
+                                Value="{Binding DisplaySetting.WeekendCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding DisplaySetting.WeekendCenterFontSize}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="星期字体颜色：" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.WeekendFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <ui:CardExpander Header="背景设置项">
+                    <StackPanel>
+
+
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="背景来源:" />
+                            <ComboBox
+                                VerticalAlignment="Center"
+                                ItemsSource="{Binding BackgroundImageRequest.UseableRequest, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding BackgroundImageRequest.SelectedRequest, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+
+
+
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="背景透明度：" />
+                            <Slider
+                                VerticalAlignment="Center"
+                                Maximum="1"
+                                Minimum="0"
+                                SmallChange="0.01"
+                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:NumberBox
+                                Width="150"
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Maximum="1"
+                                Minimum="0"
+                                NumberFormatter="{StaticResource PercentFormmater}"
+                                SmallChange="0.01"
+                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+
+
+
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="背景圆角度：" />
+                            <Slider
+                                VerticalAlignment="Center"
+                                Maximum="1"
+                                Minimum="0"
+                                SmallChange="0.01"
+                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:NumberBox
+                                Width="150"
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Maximum="1"
+                                Minimum="0"
+                                SmallChange="0.01"
+                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="刷新间隔(秒)：" />
+
+                            <ui:NumberBox
+                                Width="150"
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Maximum="9999"
+                                Minimum="1"
+                                SmallChange="1"
+                                Value="{Binding DisplaySetting.TotalCountDown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        </StackPanel>
+
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="缓存大小：" />
+                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplaySetting.CacheSize}" />
+
+                            <ui:Button
+                                Margin="5,0"
+                                Command="{Binding DisplaySetting.ClearCacheCommand}"
+                                Content="清理"
+                                ToolTip="清理" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource labelTextBlock}"
+                                Text="最大缓存数量：" />
+
+                            <ui:NumberBox
+                                Width="150"
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                Maximum="9999"
+                                Minimum="1"
+                                SmallChange="1"
+                                Value="{Binding DisplaySetting.MaxCacheCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        </StackPanel>
+
+
+                        <ui:CardExpander Header="背景详细项">
+
+                            <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance}" />
+
+                        </ui:CardExpander>
+
+                        <ui:CardExpander Header="粒子背景项">
+                            <StackPanel>
+
+                                <StackPanel Margin="0,10" Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="150"
+                                        HorizontalAlignment="Left"
+                                        FontSize="22"
+                                        Style="{StaticResource labelTextBlock}"
+                                        Text="启用粒子背景" />
+                                    <ui:ToggleSwitch x:Name="EnableToggle" IsChecked="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableParticleBackground, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <ia:Interaction.Triggers>
+                                            <ia:EventTrigger EventName="Checked">
+                                                <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                            </ia:EventTrigger>
+                                            <ia:EventTrigger EventName="Unchecked">
+                                                <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                            </ia:EventTrigger>
+                                        </ia:Interaction.Triggers>
+                                    </ui:ToggleSwitch>
+                                </StackPanel>
+
+                                <!--  粒子背景选项  -->
+                                <StackPanel Visibility="{Binding ElementName=EnableToggle, Path=IsChecked, Converter={StaticResource bool2Visi}}">
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="背景圆角度：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="90"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.CornerRadius, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            VerticalAlignment="Center"
+                                            Maximum="90"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.CornerRadius, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="背景粒子数量：" />
+
+                                        <Slider
+                                            x:Name="BackgroundParticleCountSlider"
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleCount, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+
+                                        <ui:NumberBox
+                                            x:Name="BackgroundParticleCountBox"
+                                            Width="150"
+                                            VerticalAlignment="Center"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleCount, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="粒子间链接距离：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleLinkDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleLinkDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="粒子最大链接数量：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="90"
+                                            Minimum="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleMaxConnection, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="90"
+                                            Minimum="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleMaxConnection, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="粒子与鼠标链接距离：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseLinkDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="999"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseLinkDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="粒子与鼠标链接判定距离：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="999"
+                                            Minimum="5"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseAttractionDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="999"
+                                            Minimum="5"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseAttractionDistance, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="粒子更新间隔（毫秒）" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="100"
+                                            Minimum="16"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.UpdateMilliSecond, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="100"
+                                            Minimum="16"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.UpdateMilliSecond, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="渐变背景透明度：" />
+
+                                        <Slider
+                                            Width="300 "
+                                            Margin="5,0"
+                                            Maximum="1"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleBackgroundOpacity, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Width="150"
+                                            Maximum="1"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleBackgroundOpacity, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="渐变颜色背景：" />
+
+                                        <ui:ToggleSwitch IsChecked="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableColorfulBackground, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="Checked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                                <ia:EventTrigger EventName="Unchecked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:ToggleSwitch>
+
+                                    </StackPanel>
+
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="追踪鼠标：" />
+
+                                        <ui:ToggleSwitch IsChecked="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.TrackingMouse, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="Checked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                                <ia:EventTrigger EventName="Unchecked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:ToggleSwitch>
+
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="多色粒子：" />
+
+                                        <ui:ToggleSwitch IsChecked="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableColorfulParticle, Mode=TwoWay}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="Checked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                                <ia:EventTrigger EventName="Unchecked">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:ToggleSwitch>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </ui:CardExpander>
+
+                        <ui:CardExpander Header="音频可视化项">
+                            <StackPanel>
+                                <StackPanel Margin="0,10" Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="150"
+                                        HorizontalAlignment="Left"
+                                        FontSize="22"
+                                        Style="{StaticResource labelTextBlock}"
+                                        Text="启用音频可视化" />
+                                    <ui:ToggleSwitch x:Name="AudioWaveEnbleToggle" IsChecked="{Binding Config.ProgramConfigData.AudioWaveSetting.EnableAudioWave, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <ia:Interaction.Triggers>
+                                            <ia:EventTrigger EventName="Checked">
+                                                <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                            </ia:EventTrigger>
+                                            <ia:EventTrigger EventName="Unchecked">
+                                                <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                            </ia:EventTrigger>
+                                        </ia:Interaction.Triggers>
+                                    </ui:ToggleSwitch>
+                                </StackPanel>
+
+                                <!--  音频可视化项  -->
+                                <StackPanel Visibility="{Binding ElementName=AudioWaveEnbleToggle, Path=IsChecked, Converter={StaticResource bool2Visi}}">
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化样式：" />
+                                        <ComboBox ItemsSource="{Binding Config.ProgramConfigData.AudioWaveSetting.ApperenceTypes}" SelectedItem="{Binding Config.ProgramConfigData.AudioWaveSetting.ApperenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="数据权重：" />
+                                        <Slider
+                                            Maximum="0.9"
+                                            Minimum="0"
+                                            TickFrequency="0.01"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.DataWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.DataWeight, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="10"
+                                        Text="(影响可视化矩形平滑度,值越大越平滑，但精度降低，建议值0.5)" />
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位数量：" />
+
+                                        <Slider
+                                            Maximum="300"
+                                            Minimum="10"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="300"
+                                            Minimum="10"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitCount, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位边宽：" />
+
+                                        <Slider
+                                            Maximum="10"
+                                            Minimum="0"
+                                            TickFrequency="0.1"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitStrokeWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="10"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitStrokeWidth, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位圆角：" />
+
+                                        <Slider
+                                            Maximum="10"
+                                            Minimum="0"
+                                            TickFrequency="0.1"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="10"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitRadius, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化圆宽度：" />
+
+                                        <Slider
+                                            Maximum="999"
+                                            Minimum="20"
+                                            TickFrequency="1"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.EllipseRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="999"
+                                            Minimum="20"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.EllipseRadius, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位透明度：" />
+
+                                        <Slider
+                                            Maximum="1"
+                                            Minimum="0"
+                                            TickFrequency="0.01"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </Slider>
+
+                                        <ui:NumberBox
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="1"
+                                            Minimum="0"
+                                            Value="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitOpacity, StringFormat=N2}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                                    <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ui:NumberBox>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位随机色：" />
+
+                                        <CheckBox x:Name="VisualizerRandomColorChecker" IsChecked="{Binding Config.ProgramConfigData.AudioWaveSetting.UsingRandomUnitColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel
+                                        Margin="0,5"
+                                        Orientation="Horizontal"
+                                        Visibility="{Binding ElementName=VisualizerRandomColorChecker, Path=IsChecked, Converter={StaticResource bool2RVisi}}">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位指定色值：" />
+
+                                        <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding AudioVisualizer.SpColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Text="可视化单位边指定色值：" />
+
+                                        <mah:ColorPicker
+                                            Width="50"
+                                            Height="50"
+                                            BorderThickness="1"
+                                            SelectedColor="{Binding AudioVisualizer.SpStrokeColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </ui:CardExpander>
+
+                    </StackPanel>
+
+
+
+                </ui:CardExpander>
+
 
             </StackPanel>
+        </ui:DynamicScrollViewer>
+    </Grid>
 
-            <StackPanel Margin="0,5" Orientation="Horizontal">
-
-
-
-                <ui:TextBlock
-                    VerticalAlignment="Center"
-                    Style="{StaticResource labelTextBlock}"
-                    Text="背景透明度：" />
-                <Slider
-                    VerticalAlignment="Center"
-                    Maximum="1"
-                    Minimum="0"
-                    SmallChange="0.01"
-                    Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <ui:NumberBox
-                    Width="150"
-                    Margin="5,0"
-                    VerticalAlignment="Center"
-                    Maximum="1"
-                    Minimum="0"
-                    NumberFormatter="{StaticResource PercentFormmater}"
-                    SmallChange="0.01"
-                    Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-
-            <StackPanel Margin="0,5" Orientation="Horizontal">
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Style="{StaticResource labelTextBlock}"
-                    Text="缓存大小：" />
-                <TextBlock VerticalAlignment="Center" Text="{Binding DisplaySetting.CacheSize}" />
-
-                <ui:Button
-                    Margin="5,0"
-                    Command="{Binding DisplaySetting.ClearCacheCommand}"
-                    Content="清理"
-                    ToolTip="清理" />
-            </StackPanel>
-
-            <Rectangle
-                Width="600"
-                Height="1"
-                Margin="0,10"
-                Fill="SlateGray" />
-
-            <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance}" />
-
-            <Rectangle
-                Width="600"
-                Height="1"
-                Margin="0,10"
-                Fill="SlateGray" />
-        </StackPanel>
-    </ui:DynamicScrollViewer>
 </UserControl>

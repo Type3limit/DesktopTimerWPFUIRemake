@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:backView="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helper="clr-namespace:DesktopTimer.Helpers"
     xmlns:local="clr-namespace:DesktopTimer"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -26,36 +27,47 @@
     ShowInTaskbar="False"
     ShowMaxRestoreButton="False"
     ShowMinButton="False"
-    ShowSystemMenuOnRightClick="False"
+    ShowTitleBar="False"
     TextOptions.TextFormattingMode="Display"
     TextOptions.TextHintingMode="Animated"
     TextOptions.TextRenderingMode="ClearType"
-    TitleBarHeight="0"
     WindowStyle="None"
     mc:Ignorable="d">
 
+    <Window.Resources>
+        <helper:HalfConverter x:Key="percentConverter" />
+    </Window.Resources>
     <Window.DataContext>
+
         <model:MainWorkModel x:Name="mainWorkModel" />
     </Window.DataContext>
 
     <Border
         x:Name="FrameBorder"
+        Background="Transparent"
         ClipToBounds="True"
-        CornerRadius="{Binding DisplaySetting.TimerBackgroundCornorRadius, UpdateSourceTrigger=PropertyChanged}"
+        CornerRadius="{Binding DisplaySetting.BackgroundCornerRadius, UpdateSourceTrigger=PropertyChanged}"
         SnapsToDevicePixels="True">
         <Grid>
             <ui:Flyout
                 x:Name="SettingFlyout"
                 Width="{Binding ElementName=mainWindow, Path=ActualWidth}"
                 Height="{Binding ElementName=mainWindow, Path=ActualHeight}"
+                Background="#99000000"
+                BorderThickness="0"
                 IsOpen="{Binding DisplaySetting.IsSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 Placement="Center">
-                <Border>
+
+                <Border
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    CornerRadius="{Binding DisplaySetting.BackgroundCornerRadius}">
                     <backView:SettingControl
                         x:Name="SettingControl"
-                        MaxWidth="{Binding ElementName=mainWindow, Path=ActualWidth}"
-                        MaxHeight="{Binding ElementName=mainWindow, Path=ActualHeight}"
-                        DataContext="{Binding ElementName=mainWorkModel}" />
+                        Width="{Binding ElementName=mainWindow, Path=ActualWidth}"
+                        Height="{Binding ElementName=mainWindow, Path=ActualHeight}"
+                        Margin="5"
+                        DataContext="{Binding ElementName=mainWindow, Path=DataContext}" />
                 </Border>
             </ui:Flyout>
 
@@ -88,7 +100,7 @@
             </tray:NotifyIcon>
 
 
-            <Frame x:Name="ContentFrame" />
+            <Frame x:Name="ContentFrame" Background="Transparent" />
         </Grid>
 
     </Border>

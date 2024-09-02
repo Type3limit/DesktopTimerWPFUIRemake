@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using DesktopTimer.models;
+using System.Windows.Controls;
 
 namespace DesktopTimer.Views.BackgroundViews
 {
@@ -11,5 +12,6 @@ namespace DesktopTimer.Views.BackgroundViews
         {
             InitializeComponent();
         }
+
     }
 }

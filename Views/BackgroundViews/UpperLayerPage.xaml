@@ -1,0 +1,58 @@
+﻿<Page
+    x:Class="DesktopTimer.Views.BackgroundViews.UpperLayerPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:con="clr-namespace:DesktopTimer.Helpers"
+    xmlns:control="clr-namespace:DesktopTimer.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="clr-namespace:DesktopTimer.models"
+    Title="UpperLayerPage"
+    d:DataContext="{d:DesignInstance Type={x:Type model:MainWorkModel}}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <con:BoolToVisiableConverters x:Key="bool2Visi" />
+    </Page.Resources>
+
+    <Grid d:IsHidden="True">
+
+        <control:AudioWaveControl
+            Apperence="{Binding Config.ProgramConfigData.AudioWaveSetting.ApperenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            DataWeight="{Binding Config.ProgramConfigData.AudioWaveSetting.DataWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            EllipseRadius="{Binding Config.ProgramConfigData.AudioWaveSetting.EllipseRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Enabled="{Binding Config.ProgramConfigData.AudioWaveSetting.EnableAudioWave, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            SpecificUnitColor="{Binding Config.ProgramConfigData.AudioWaveSetting.SpecificUnitColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            SpecificUnitStrokeColor="{Binding Config.ProgramConfigData.AudioWaveSetting.SpecificUnitStrokeColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UnitCount="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UnitOpacity="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UnitRadius="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UnitStrokeWidth="{Binding Config.ProgramConfigData.AudioWaveSetting.UnitStrokeWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UsingRandomUnitColor="{Binding Config.ProgramConfigData.AudioWaveSetting.UsingRandomUnitColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Visibility="{Binding Config.ProgramConfigData.AudioWaveSetting.EnableAudioWave, Converter={StaticResource bool2Visi}}" />
+
+        <control:ParticleBackgroundControl
+            x:Name="ParticleBackground"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            d:IsHidden="True"
+            ColorBackgroundOpacity="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            CornorRadius="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.CornerRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            IsHitTestVisible="False"
+            MaxConnectionDistance="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleLinkDistance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            MaxMouseConnectionDistance="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseLinkDistance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            MaxPointConnection="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleMaxConnection, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            MouseAttractionDistance="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.MouseAttractionDistance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            ParticleCount="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.ParticleCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            ParticleUpdateMilliseconds="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.UpdateMilliSecond, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            TrackMouse="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.TrackingMouse, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UseColorfulBackground="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableColorfulBackground, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            UseColorfulPointLines="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableColorfulParticle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Visibility="{Binding Config.ProgramConfigData.ParticleBackgroundSetting.EnableParticleBackground, Mode=TwoWay, Converter={StaticResource bool2Visi}}" />
+
+    </Grid>
+
+</Page>

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
+using DesktopTimer.Models;
 using DesktopTimer.Models.BackgroundWorkingModel;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,12 @@ namespace DesktopTimer.models
             get => backgroundImageRequest??(backgroundImageRequest = new BackgroundImageRequestModel(this));
         }
 
+        private LocalConfig? config =  null;
+        public LocalConfig Config
+        {
+            get=>config??(config = new LocalConfig(this));
+        }
+
         #endregion
 
         #region delegate 
@@ -48,6 +55,7 @@ namespace DesktopTimer.models
         {
             BackgroundImageRequest?.Initialize();
             DisplaySetting?.Initilize();
+            Config?.Initialize();
             StartTimer();
         }
 
@@ -67,11 +75,32 @@ namespace DesktopTimer.models
             }));
         }
 
-
+        private ICommand? openFolderCommand;
+        /// <summary>
+        /// To open folder
+        /// </summary>
+        public ICommand OpenFolderCommand
+        {
+            get=>openFolderCommand ??(openFolderCommand = new RelayCommand<string?>((target) => 
+            {
+                System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+                var res = folderBrowserDialog.ShowDialog();
+                if (res == System.Windows.Forms.DialogResult.OK)
+                {
+                    Action? lambda = target switch
+                    {
+                        "Collect" => ()=>{ Config.ProgramConfigData.LocalCollectPath = folderBrowserDialog.SelectedPath;},
+                        _=>null,
+                    };
+                    lambda?.Invoke();
+                }
+            }));
+        }
         #endregion
 
         #region methods
         System.Timers.Timer? timer = null;
+        TimeUpdateMessage updateMessage =  new TimeUpdateMessage();
         /// <summary>
         /// start timer event for 1 second
         /// </summary>
@@ -86,7 +115,7 @@ namespace DesktopTimer.models
             timer = new System.Timers.Timer();
             timer.Interval = 1000;
             timer.Elapsed += (o,e) => { 
-                WeakReferenceMessenger.Default.Send(new TimeUpdateMessage());
+                WeakReferenceMessenger.Default.Send(updateMessage);
             };
             timer.Start();
         }

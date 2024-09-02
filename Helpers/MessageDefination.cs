@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DesktopTimer.Models.BackgroundWorkingModel.Definations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -79,4 +80,36 @@ namespace DesktopTimer.Helpers
         }
     }
 
+    /// <summary>
+    /// To notify current selected background request model change
+    /// </summary>
+    public class RequestModelChangedMessage:TypedMessage<RequestBaseUseage>
+    {
+        public RequestModelChangedMessage(RequestBaseUseage cur)
+        {
+            Value = cur;
+        }
+    }
+
+    /// <summary>
+    /// To notify that config file has readed
+    /// </summary>
+    public class ConfigReadComplecateMessage : TypedMessage<object>
+    {
+
+    }
+
+
+    /// <summary>
+    /// To notify to save config file
+    /// (User: user related)
+    /// (System:program related)
+    /// </summary>
+    public class RequestSaveConfigMessage : TypedMessage<string>
+    {
+        public RequestSaveConfigMessage(string var)
+        {
+            Value = var;
+        }
+    }
 }
