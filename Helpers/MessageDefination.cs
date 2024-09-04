@@ -99,17 +99,45 @@ namespace DesktopTimer.Helpers
 
     }
 
+    public enum ConfigType
+    {
+        User,
+        Program
+    }
 
     /// <summary>
     /// To notify to save config file
     /// (User: user related)
     /// (System:program related)
     /// </summary>
-    public class RequestSaveConfigMessage : TypedMessage<string>
+    public class RequestSaveConfigMessage : TypedMessage<ConfigType>
     {
-        public RequestSaveConfigMessage(string var)
+        public RequestSaveConfigMessage(ConfigType var)
         {
             Value = var;
+        }
+    }
+
+    public enum BrowserOperation
+    {
+        Invalid,
+        StepBack,
+        StepForward,
+        Flush
+    }
+    public class WebBrowserOperationMessage:TypedMessage<BrowserOperation>
+    {
+        public WebBrowserOperationMessage(BrowserOperation var)
+        {
+            Value = var;
+        }
+    }
+
+    public class ThemeChangedMessage : TypedMessage<Wpf.Ui.Appearance.ApplicationTheme>
+    {
+        public ThemeChangedMessage(Wpf.Ui.Appearance.ApplicationTheme curTheme)
+        {
+            Value = curTheme;
         }
     }
 }

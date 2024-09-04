@@ -701,6 +701,22 @@ namespace DesktopTimer.Views.Controls
         public void Update(double width, double height, Point mousePosition, double MaxMouseConnectionDistance,
             double MouseAttractionDistance, bool ShouldIgnoreMouse)
         {
+
+            Point center = new Point(width / 2, height / 2);
+
+            // Check if particle is near any corner
+            bool nearTopLeft = Position.X < width * 0.01 && Position.Y < height * 0.01;
+            bool nearTopRight = Position.X > width * 0.99 && Position.Y < height * 0.01;
+            bool nearBottomLeft = Position.X < width * 0.01 && Position.Y > height * 0.99;
+            bool nearBottomRight = Position.X > width * 0.99 && Position.Y > height * 0.99;
+
+            if (nearTopLeft || nearTopRight || nearBottomLeft || nearBottomRight)
+            {
+                Vector directionToCenter = center - Position;
+                directionToCenter.Normalize();
+                acceleration += directionToCenter * 0.02; // Adjust the strength of the acceleration as needed
+            }
+
             if (!ShouldIgnoreMouse)
             {
                 Vector distanceVector = mousePosition - Position;
@@ -761,15 +777,15 @@ namespace DesktopTimer.Views.Controls
 
             if (Position.X <= 0 || Position.X >= width)
             {
-                velocity.X = -velocity.X * 1.1;  // 反转并稍微增加速度
+                velocity.X = -velocity.X * 1.1;  
                 acceleration.X = 0;
-                Position.X = Position.X <= 0 ? 1 : width - 1;  // 确保粒子在边界内
+                Position.X = Position.X <= 0 ? 1 : width - 1;  
             }
             if (Position.Y <= 0 || Position.Y >= height)
             {
-                velocity.Y = -velocity.Y * 1.1;  // 反转并稍微增加速度
+                velocity.Y = -velocity.Y * 1.1;  
                 acceleration.Y = 0;
-                Position.Y = Position.Y <= 0 ? 1 : height - 1;  // 确保粒子在边界内
+                Position.Y = Position.Y <= 0 ? 1 : height - 1; 
             }
             Position = new Point(
                 Math.Clamp(Position.X, 0, width),

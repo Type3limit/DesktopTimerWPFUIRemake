@@ -5,11 +5,12 @@
     xmlns:con="clr-namespace:DesktopTimer.Helpers"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
+    xmlns:helper="clr-namespace:DesktopTimer.Helpers"
     xmlns:ia="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:DesktopTimer.models"
+    xmlns:model="clr-namespace:DesktopTimer.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     d:DataContext="{d:DesignInstance model:MainWorkModel}"
     d:DesignHeight="450"
@@ -27,6 +28,11 @@
             <con:FontNameConverter x:Key="FontFamilyCon" />
             <con:BoolToReverseVisiableConverters x:Key="bool2RVisi" />
             <con:EnumDisplayNameConverter x:Key="enumDisplayConverter" />
+            <con:CtrlKeyToVisi x:Key="ctrl2visi" />
+            <con:ShiftKeyToVisi x:Key="shift2visi" />
+            <con:AltKeyToVisi x:Key="alt2visi" />
+            <con:WinKeyToVisi x:Key="Win2visi" />
+            <con:KeyToString x:Key="Key2String" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Views/Styles/WebViewsStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
@@ -51,21 +57,178 @@
             <StackPanel Margin="10" Orientation="Vertical">
 
                 <ui:CardExpander Header="程序相关项">
-                    <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                    <StackPanel>
+
+
+                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="收藏位置：" />
+                            <ui:TextBox
+                                MaxWidth="500"
+                                Margin="0,0,10,0"
+                                BorderThickness="0"
+                                Text="{Binding Config.ProgramConfigData.LocalCollectPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:TextBox>
+                            <Button
+                                x:Name="CheckLocalStorageButton"
+                                Command="{Binding OpenFolderCommand}"
+                                CommandParameter="Collect"
+                                Content="浏览" />
+                        </StackPanel>
+
                         <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Text="收藏位置：" />
-                        <TextBox
-                            Margin="0,0,10,0"
-                            BorderThickness="0"
-                            Text="{Binding Config.ProgramConfigData.LocalCollectPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button
-                            x:Name="CheckLocalStorageButton"
-                            Command="{Binding OpenFolderCommand}"
-                            CommandParameter="Collect"
-                            Content="浏览" />
+                            Foreground="#CCCCCC"
+                            Text="快捷键"
+                            TextBlock.FontStyle="Oblique">
+                            <TextBlock.ToolTip>
+
+                                <ItemsControl ItemsSource="{Binding ShotKeys}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type helper:HotKey}">
+                                            <Grid Width="300" Margin="5,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2.5*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    HorizontalAlignment="Left"
+                                                    FontSize="14"
+                                                    FontStretch="UltraExpanded"
+                                                    Text="{Binding name}" />
+
+                                                <Grid Grid.Column="1" HorizontalAlignment="Right">
+                                                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                                        <Border
+                                                            Width="30"
+                                                            Height="25"
+                                                            Margin="3,0,0,0"
+                                                            Background="#3D3D3D"
+                                                            CornerRadius="2"
+                                                            Visibility="{Binding KeyModifiers, Converter={StaticResource ctrl2visi}}">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontSize="12"
+                                                                Foreground="#7A7A7A"
+                                                                Text="Ctrl+" />
+                                                        </Border>
+                                                        <Border
+                                                            Width="30"
+                                                            Height="25"
+                                                            Margin="3,0,0,0"
+                                                            Background="#3D3D3D"
+                                                            CornerRadius="2"
+                                                            Visibility="{Binding KeyModifiers, Converter={StaticResource alt2visi}}">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontSize="12"
+                                                                Foreground="#7A7A7A"
+                                                                Text="Alt+" />
+                                                        </Border>
+                                                        <Border
+                                                            Width="35"
+                                                            Height="25"
+                                                            Margin="3,0,0,0"
+                                                            Background="#3D3D3D"
+                                                            CornerRadius="2"
+                                                            Visibility="{Binding KeyModifiers, Converter={StaticResource shift2visi}}">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontSize="12"
+                                                                Foreground="#7A7A7A"
+                                                                Text="Shift+" />
+                                                        </Border>
+                                                        <Border
+                                                            Width="30"
+                                                            Height="25"
+                                                            Margin="3,0,0,0"
+                                                            Background="#3D3D3D"
+                                                            CornerRadius="2"
+                                                            Visibility="{Binding KeyModifiers, Converter={StaticResource Win2visi}}">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontSize="12"
+                                                                Foreground="#7A7A7A"
+                                                                Text="Win+" />
+                                                        </Border>
+
+                                                        <TextBlock
+                                                            Margin="5,0,0,0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontSize="12"
+                                                            FontStretch="UltraExpanded"
+                                                            Foreground="#7A7A7A"
+                                                            Text="{Binding Key, Converter={StaticResource Key2String}}"
+                                                            TextAlignment="Center" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Grid>
+
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </TextBlock.ToolTip>
+                            <TextBlock.Resources>
+                                <Storyboard x:Key="movePoint">
+                                    <PointAnimation
+                                        RepeatBehavior="Forever"
+                                        Storyboard.TargetName="Brush"
+                                        Storyboard.TargetProperty="Center"
+                                        From="-2,.5"
+                                        To="3,.5"
+                                        Duration="0:0:3.3" />
+                                    <PointAnimation
+                                        RepeatBehavior="Forever"
+                                        Storyboard.TargetName="Brush"
+                                        Storyboard.TargetProperty="GradientOrigin"
+                                        From="-2,.5"
+                                        To="3,.5"
+                                        Duration="0:0:3.3" />
+                                </Storyboard>
+                            </TextBlock.Resources>
+                            <TextBlock.OpacityMask>
+                                <RadialGradientBrush x:Name="Brush" Center=".5,.5" GradientOrigin=".5,.5" RadiusX=".43" RadiusY="2">
+                                    <GradientStop Color="Black" />
+                                    <GradientStop Offset=".5" Color="#F000" />
+                                    <GradientStop Offset="1" Color="#4000" />
+                                </RadialGradientBrush>
+                            </TextBlock.OpacityMask>
+                            <TextBlock.Triggers>
+                                <EventTrigger RoutedEvent="MouseEnter">
+                                    <EventTrigger.Actions>
+                                        <BeginStoryboard x:Name="movePointBoard" Storyboard="{StaticResource movePoint}" />
+                                    </EventTrigger.Actions>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="MouseLeave">
+                                    <EventTrigger.Actions>
+                                        <StopStoryboard BeginStoryboardName="movePointBoard" />
+                                    </EventTrigger.Actions>
+                                </EventTrigger>
+                            </TextBlock.Triggers>
+                        </TextBlock>
+
                     </StackPanel>
+
+
 
                 </ui:CardExpander>
 
@@ -79,7 +242,16 @@
                                 FontSize="12"
                                 Style="{StaticResource labelTextBlock}"
                                 Text="时间背景可见性：" />
-                            <ui:ToggleSwitch IsChecked="{Binding DisplaySetting.IsTimerBorderVisiable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <ui:ToggleSwitch IsChecked="{Binding DisplaySetting.IsTimerBorderVisiable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="Checked">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                    <ia:EventTrigger EventName="Unchecked">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:ToggleSwitch>
                         </StackPanel>
 
                         <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -93,7 +265,13 @@
                                 Maximum="1"
                                 Minimum="0.01"
                                 TickFrequency="0.01"
-                                Value="{Binding DisplaySetting.TimerBackgroundWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.TimerBackgroundWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <ui:TextBlock
                                 Margin="10,0"
@@ -112,7 +290,13 @@
                                 Maximum="1"
                                 Minimum="0.01"
                                 TickFrequency="0.01"
-                                Value="{Binding DisplaySetting.TimerBackgroundHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.TimerBackgroundHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <ui:TextBlock
                                 Margin="10,0"
@@ -132,7 +316,13 @@
                                 Maximum="90"
                                 Minimum="0"
                                 TickFrequency="1"
-                                Value="{Binding DisplaySetting.TimerBackgroundCornorRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.TimerBackgroundCornorRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <ui:TextBlock
                                 Margin="10,0"
@@ -146,7 +336,13 @@
                                 FontSize="12"
                                 Style="{StaticResource labelTextBlock}"
                                 Text="时间背景颜色：" />
-                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimerBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimerBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="SelectedColorChanged">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </mah:ColorPicker>
                         </StackPanel>
 
                         <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -169,6 +365,11 @@
                                             Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="SelectionChanged">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
                             </ComboBox>
                         </StackPanel>
 
@@ -182,12 +383,18 @@
                                 BorderThickness="0"
                                 Maximum="256"
                                 Minimum="10"
-                                Value="{Binding DisplaySetting.TimeCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.TimeCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <TextBlock
                                 Margin="10,0"
                                 VerticalAlignment="Center"
-                                Text="{Binding TimeCenterFontSize}" />
+                                Text="{Binding DisplaySetting.TimeCenterFontSize}" />
                         </StackPanel>
 
                         <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -196,7 +403,13 @@
                                 FontSize="12"
                                 Style="{StaticResource labelTextBlock}"
                                 Text="时间字体颜色：" />
-                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimeFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.TimeFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="SelectedColorChanged">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </mah:ColorPicker>
                         </StackPanel>
 
 
@@ -221,6 +434,11 @@
                                             Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="SelectionChanged">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
                             </ComboBox>
                         </StackPanel>
 
@@ -234,7 +452,13 @@
                                 BorderThickness="0"
                                 Maximum="256"
                                 Minimum="10"
-                                Value="{Binding DisplaySetting.WeekendCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.WeekendCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
                             <TextBlock
                                 Margin="10,0"
                                 VerticalAlignment="Center"
@@ -247,7 +471,13 @@
                                 FontSize="12"
                                 Style="{StaticResource labelTextBlock}"
                                 Text="星期字体颜色：" />
-                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.WeekendFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding DisplaySetting.WeekendFontColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="SelectedColorChanged">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </mah:ColorPicker>
                         </StackPanel>
 
 
@@ -284,7 +514,13 @@
                                 Maximum="1"
                                 Minimum="0"
                                 SmallChange="0.01"
-                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <ui:NumberBox
                                 Width="150"
@@ -294,7 +530,13 @@
                                 Minimum="0"
                                 NumberFormatter="{StaticResource PercentFormmater}"
                                 SmallChange="0.01"
-                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:NumberBox>
                         </StackPanel>
 
                         <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -310,7 +552,13 @@
                                 Maximum="1"
                                 Minimum="0"
                                 SmallChange="0.01"
-                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </Slider>
 
                             <ui:NumberBox
                                 Width="150"
@@ -319,7 +567,13 @@
                                 Maximum="1"
                                 Minimum="0"
                                 SmallChange="0.01"
-                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:NumberBox>
                         </StackPanel>
 
                         <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -336,7 +590,13 @@
                                 Maximum="9999"
                                 Minimum="1"
                                 SmallChange="1"
-                                Value="{Binding DisplaySetting.TotalCountDown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.TotalCountDown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:NumberBox>
 
                         </StackPanel>
 
@@ -369,16 +629,17 @@
                                 Maximum="9999"
                                 Minimum="1"
                                 SmallChange="1"
-                                Value="{Binding DisplaySetting.MaxCacheCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Value="{Binding DisplaySetting.MaxCacheCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ia:Interaction.Triggers>
+                                    <ia:EventTrigger EventName="PreviewLostKeyboardFocus">
+                                        <ia:InvokeCommandAction Command="{Binding Config.SaveProgramSettingCommand}" />
+                                    </ia:EventTrigger>
+                                </ia:Interaction.Triggers>
+                            </ui:NumberBox>
 
                         </StackPanel>
 
 
-                        <ui:CardExpander Header="背景详细项">
-
-                            <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance}" />
-
-                        </ui:CardExpander>
 
                         <ui:CardExpander Header="粒子背景项">
                             <StackPanel>
@@ -956,7 +1217,7 @@
                                             FontSize="12"
                                             Text="可视化单位指定色值：" />
 
-                                        <mah:ColorPicker BorderThickness="0" SelectedColor="{Binding AudioVisualizer.SpColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <mah:ColorPicker SelectedColor="{Binding Config.ProgramConfigData.AudioWaveSetting.SpecificUnitColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                                     </StackPanel>
 
@@ -966,11 +1227,7 @@
                                             FontSize="12"
                                             Text="可视化单位边指定色值：" />
 
-                                        <mah:ColorPicker
-                                            Width="50"
-                                            Height="50"
-                                            BorderThickness="1"
-                                            SelectedColor="{Binding AudioVisualizer.SpStrokeColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <mah:ColorPicker BorderThickness="1" SelectedColor="{Binding Config.ProgramConfigData.AudioWaveSetting.SpecificUnitStrokeColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                                     </StackPanel>
                                 </StackPanel>
@@ -980,9 +1237,13 @@
                     </StackPanel>
 
 
-
                 </ui:CardExpander>
 
+                <ui:CardExpander Header="背景详细项">
+
+                    <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance}" />
+
+                </ui:CardExpander>
 
             </StackPanel>
         </ui:DynamicScrollViewer>

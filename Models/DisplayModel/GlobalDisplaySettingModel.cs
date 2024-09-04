@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using System.Diagnostics;
 using System.IO;
+using DesktopTimer.Models;
 
 namespace DesktopTimer.models.displayModel
 {
@@ -268,6 +269,8 @@ namespace DesktopTimer.models.displayModel
             set => SetProperty(ref maxCacheCount, value);
         }
 
+        public string? CurrentBackgroundViewPath = null;
+
         private BitmapImage? backgroundView = null;
         /// <summary>
         /// current background image
@@ -300,17 +303,28 @@ namespace DesktopTimer.models.displayModel
             set => SetProperty(ref shouldPauseFresh, value);
         }
 
+
+        private bool isTopMost = false;
+        /// <summary>
+        /// mark if currentWindow topMost
+        /// </summary>
+        public bool IsTopMost
+        {
+            get=>isTopMost;
+            set=>SetProperty(ref isTopMost,value);
+        }
         #endregion
 
         #region setting 
         [ObservableProperty]
         private bool isSettingOpen = false;
-        /// <summary>
-        /// mark if setting flyout opened
-        /// </summary>
 
         [ObservableProperty]
-        private bool isOnlineBackgroundMode = true;
+        private bool isExtraSettingOpen = false;
+
+        [ObservableProperty]
+        private bool isTranslateOpen = false;
+
 
         #endregion
         #endregion
@@ -387,6 +401,24 @@ namespace DesktopTimer.models.displayModel
             }));
         }
 
+        private ICommand? openExtraSettingCommand = null;
+        public ICommand OpenExtraSettingCommand
+        {
+            get => openExtraSettingCommand ?? (openExtraSettingCommand = new RelayCommand(() =>
+            {
+                IsExtraSettingOpen = true;
+            }));
+        }
+
+        private ICommand? openTranslateCommand = null;
+        public ICommand OpenTranslateCommand
+        {
+            get=>openTranslateCommand ??(openTranslateCommand = new RelayCommand(() => 
+            {
+                IsTranslateOpen = true;
+            }));
+        }
+
         private ICommand? closeSettingCommand = null;
         public ICommand CloseSettingCommand
         {
@@ -428,6 +460,32 @@ namespace DesktopTimer.models.displayModel
                 CheckToFillBackgroundCache();
             }));
         }
+
+        private ICommand? collectCurrentImageCommand = null;
+        public ICommand? CollectCurrentImageCommand
+        {
+            get=> collectCurrentImageCommand ?? (collectCurrentImageCommand = new RelayCommand(() => 
+            {
+                if(CurrentBackgroundViewPath==null || mainModelInstance?.Config?.ProgramConfigData?.LocalCollectPath==null)
+                    return;
+                var targetPath = mainModelInstance.Config.ProgramConfigData.
+                LocalCollectPath.PathCombine(CurrentBackgroundViewPath.getName());
+                if(!targetPath.IsFileExist())
+                {
+                    File.Copy(CurrentBackgroundViewPath, targetPath);
+                }
+
+            }));
+        }
+
+        private ICommand? setTopMostCommand = null;
+        public ICommand? SetTopMostCommand
+        {
+            get=>setTopMostCommand??(setTopMostCommand =new RelayCommand(() => 
+            {
+                IsTopMost = !IsTopMost;
+            }));
+        }
         #endregion
 
         #region methods
@@ -464,6 +522,7 @@ namespace DesktopTimer.models.displayModel
             if (cur == null || ShouldPauseFresh)
                 return;
             BackgroundView = await ImageTool.LoadImg(cur);
+            CurrentBackgroundViewPath = cur;
             BackgroundImageLists.Remove(cur);
         }
 

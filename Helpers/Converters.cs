@@ -5,7 +5,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
@@ -198,6 +200,104 @@ namespace DesktopTimer.Helpers
         public override object ProvideValue(IServiceProvider serviceProvider)
         {
             return this;
+        }
+    }
+
+
+    public class CtrlKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Control) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class ShiftKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Shift) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class AltKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Alt) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class WinKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Windows) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+
+    public class KeyToString : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curKey = (Key)value;
+            if (curKey != Key.None)
+            {
+                if (curKey == Key.OemOpenBrackets)
+                    return "[";
+                else if (curKey == Key.OemCloseBrackets)
+                    return "]";
+                else if (curKey == Key.Add)
+                    return "+";
+                else if (curKey == Key.Subtract)
+                    return "-";
+                else if (curKey == Key.OemSemicolon)
+                    return ";";
+                else if (curKey == Key.OemQuotes)
+                    return ":";
+                else if (curKey == Key.OemQuestion)
+                    return "?";
+                else if (curKey == Key.Separator)
+                    return "|";
+                else if (curKey == Key.OemComma)
+                    return ",";
+                else if (curKey == Key.OemPeriod)
+                    return ".";
+                else
+                    return Enum.GetName(typeof(Key), curKey);
+            }
+
+            return string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
         }
     }
 }

@@ -4,11 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:backView="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
     xmlns:helper="clr-namespace:DesktopTimer.Helpers"
     xmlns:local="clr-namespace:DesktopTimer"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:DesktopTimer.models"
+    xmlns:model="clr-namespace:DesktopTimer.Models"
     xmlns:tray="http://schemas.lepo.co/wpfui/2022/xaml/tray"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     x:Name="mainWindow"
@@ -31,6 +32,7 @@
     TextOptions.TextFormattingMode="Display"
     TextOptions.TextHintingMode="Animated"
     TextOptions.TextRenderingMode="ClearType"
+    Topmost="{Binding DisplaySetting.IsTopMost, UpdateSourceTrigger=PropertyChanged}"
     WindowStyle="None"
     mc:Ignorable="d">
 
@@ -71,6 +73,49 @@
                 </Border>
             </ui:Flyout>
 
+            <ui:Flyout
+                x:Name="ExtraFlyout"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                BorderThickness="0"
+                IsOpen="{Binding DisplaySetting.IsExtraSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Placement="Center">
+                <ui:Flyout.Resources>
+                    <DataTemplate DataType="{x:Type def:WebBrowser}">
+                        <StackPanel>
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <ui:Button
+                                    x:Name="StepBackButton"
+                                    Command="{Binding BrowserOptionCommand}"
+                                    CommandParameter="StepBack"
+                                    Icon="{ui:SymbolIcon Symbol=ArrowLeft48}" />
+                                <ui:Button
+                                    x:Name="StepForwardButton"
+                                    Margin="5,0"
+                                    Command="{Binding BrowserOptionCommand}"
+                                    CommandParameter="StepForward"
+                                    Icon="{ui:SymbolIcon Symbol=ArrowRight48}" />
+                                <ui:TextBlock
+                                    Width="Auto"
+                                    VerticalAlignment="Center"
+                                    Text="网页地址：" />
+                                <ui:TextBox
+                                    Height="35"
+                                    MinWidth="300"
+                                    MaxWidth="500"
+                                    BorderThickness="0"
+                                    Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <ui:Button
+                                    Margin="10,10"
+                                    Command="{Binding BrowserOptionCommand}"
+                                    CommandParameter="Flush"
+                                    Icon="{ui:SymbolIcon Symbol=ArrowCircleRight48}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ui:Flyout.Resources>
+                <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance, UpdateSourceTrigger=PropertyChanged}" />
+            </ui:Flyout>
 
             <tray:NotifyIcon
                 Grid.Row="0"
@@ -98,7 +143,6 @@
                     </ContextMenu>
                 </tray:NotifyIcon.Menu>
             </tray:NotifyIcon>
-
 
             <Frame x:Name="ContentFrame" Background="Transparent" />
         </Grid>

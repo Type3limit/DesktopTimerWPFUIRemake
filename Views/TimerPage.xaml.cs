@@ -1,10 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using DesktopTimer.models;
+using DesktopTimer.Models;
 using DesktopTimer.Models.BackgroundWorkingModel.Definations;
 using DesktopTimer.Views.BackgroundViews;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +35,10 @@ namespace DesktopTimer.Views
 
         PictureViewsPage? picturePage = null;
 
+        WebViewsPage? webViewsPage = null;
+
         UpperLayerPage? upperLayerPage = null;
+
 
         public TimerPage()
         {
@@ -41,6 +46,8 @@ namespace DesktopTimer.Views
             Loaded += TimerPage_Loaded;
             Unloaded += TimerPage_Unloaded;
             DataContextChanged += TimerPage_DataContextChanged;
+
+
         }
         private void TimerPage_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -75,6 +82,15 @@ namespace DesktopTimer.Views
             }
         }
 
+        void CheckWebViewsPage()
+        {
+            if(webViewsPage==null)
+            {
+                webViewsPage = new WebViewsPage();
+                webViewsPage.DataContext = this.DataContext;
+            }
+        }
+
         void CheckPicturePage()
         {
             if (picturePage == null)
@@ -106,7 +122,8 @@ namespace DesktopTimer.Views
 
                 case RequestBaseUseage.WebsiteBackground:
                     {
-                        //TODO: add website background page
+                        CheckWebViewsPage();
+                        ContentFrame.Navigate(webViewsPage);
                         break;
                     }
 
@@ -130,5 +147,17 @@ namespace DesktopTimer.Views
             Application.Current.Shutdown();
         }
 
+        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if(sender is ContextMenu  con)
+            {
+                con.DataContext = modelInstance;
+            }
+        }
+
+        private void ContentFrame_Navigating(object sender, NavigatingCancelEventArgs e)
+        {
+            Trace.WriteLine($"load to {e}");
+        }
     }
 }

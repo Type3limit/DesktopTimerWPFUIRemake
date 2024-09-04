@@ -18,6 +18,226 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
 
+    #region request defainations
+
+    public class WallHavenRequest : RequestBase
+    {
+        #region properties
+
+        public override Type Type => typeof(WallHavenRequest);
+
+        public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
+
+        public static new string DisplayName => "WallHaven在线图片";
+
+        private bool isGeneralEnable = false;
+        public bool IsGeneralEnable
+        {
+            get => isGeneralEnable;
+            set => SetProperty(ref isGeneralEnable, value);
+        }
+
+        private bool isAnimationEnable = true;
+        public bool IsAnimationEnable
+        {
+            get => isAnimationEnable;
+            set => SetProperty(ref isAnimationEnable, value);
+        }
+
+        private bool isPeopleEnable = false;
+        public bool IsPeopleEnable
+        {
+            get => isPeopleEnable;
+            set => SetProperty(ref isPeopleEnable, value);
+        }
+
+        [JsonIgnore]
+        private Dictionary<string, string> orderText = new Dictionary<string, string>()
+        {
+            {"一天","1d" },
+            {"三天","3d" },
+            {"一周","1w" },
+            {"一月","1M" },
+            {"三月","3M" },
+            {"六月","6M" },
+            {"一年","1y" }
+        };
+        private List<string> orderLists = new List<string>() { "一天", "三天", "一周", "一月", "三月", "六月", "一年" };
+        public List<string> OrderLists
+        {
+            get => orderLists;
+        }
+
+        private string searchOrderString = "1y";
+
+        private string selectedOrder = "一年";
+
+        public string SelectedOrder
+        {
+            get => selectedOrder;
+            set
+            {
+                SetProperty(ref selectedOrder, value);
+                searchOrderString = orderText[value];
+            }
+        }
+
+        private long curPage = 0;
+        [JsonIgnore]
+        public long CurPage
+        {
+            get => curPage;
+            set => SetProperty(ref curPage, value);
+        }
+
+        private long totalPage = 1;
+        [JsonIgnore]
+        public long TotalPage
+        {
+            get => totalPage;
+            set => SetProperty(ref totalPage, value);
+        }
+
+        private string wallHavenSearchKeyWords = "";
+        /// <summary>
+        /// wallHaven search keyword
+        /// </summary>
+        public string WallHavenSearchKeyWords
+        {
+            get => wallHavenSearchKeyWords;
+            set => SetProperty(ref wallHavenSearchKeyWords, value);
+        }
+        #endregion
+        [JsonIgnore]
+        private List<string> WallHavenCache = new List<string>();
+
+        [JsonIgnore]
+        public new string requestUrl = @"https://wallhaven.cc/api/v1/search";
+        public new string RequestUrl
+        {
+            get=>requestUrl;
+            set{
+
+            }
+        }
+
+
+        List<string> downloadTask = new List<string>();
+
+        public override void ResetRequest()
+        {
+            CurPage = 0;
+            TotalPage = 1;
+            IsGeneralEnable = false;
+            IsAnimationEnable = true;
+            IsPeopleEnable = false;
+        }
+
+        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs)
+        {
+            var query = new WallhavenRequestQuery();
+            query.atleast = "";
+            query.queryCore = new WallhavenRequestQueryCore();
+            query.sorting = WallHavenSorting.toplist;
+            query.topRange = searchOrderString;
+            query.catagories.none = false;
+            query.catagories.people = IsPeopleEnable;
+            query.catagories.anime = IsAnimationEnable;
+            query.catagories.general = IsGeneralEnable;
+            query.resolutions = "";
+            query.ratios = "";
+            query.purity.none = false;
+            query.purity.sfw = true;
+            query.purity.sketchy = true;
+            query.page = AutoIncreasePage?CurPage+1:CurPage;
+            
+            if (!string.IsNullOrEmpty(WallHavenSearchKeyWords))
+                query.queryCore.addTags = new List<string>() { WallHavenSearchKeyWords };
+
+            return query;
+        }
+
+
+        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation] CancellationToken token)
+        {
+            if (!(currentResponse is WallhavenResponse response) || response.meta == null)
+                yield break;
+
+            TotalPage = response.meta.last_page;
+            CurPage = response.meta.current_page;
+
+            if (response.data != null)
+            {
+                foreach (var x in response.data)
+                {
+                    if (token.IsCancellationRequested)
+                        yield break;
+
+                    if (string.IsNullOrEmpty(x?.path))
+                        continue;
+
+                    var curFileName = x.id;
+                    var exten = "." + x?.file_type?.Split('/').LastOrDefault();
+                    var totalPath = FileMapper.NormalPictureDir.PathCombine(curFileName + exten);
+
+                    try
+                    {
+                        if (!totalPath.IsFileExist())
+                        {
+                            if (x != null)
+                            {
+                                var totalFile = curFileName + exten;
+                                if (downloadTask.Contains(totalFile))
+                                    continue;
+
+                                downloadTask.Add(totalFile);
+                                await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten, 4096);
+                                downloadTask.Remove(totalFile);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex);
+                    }
+
+                    if (totalPath.IsFileExist())
+                        yield return totalPath;
+                }
+            }
+        }
+
+
+
+        public override async Task<ResponseBase?> Request(RequestQueryBase? query)
+        {
+            if (!(query is WallhavenRequestQuery wallHavenQuery))
+                return null;
+            var curQuery = wallHavenQuery.ToQuery();
+            var requestUrl = RequestUrl + curQuery;
+            var res = await requestUrl.GetAsync();
+            return await res.GetJsonAsync<WallhavenResponse?>();
+        }
+
+        public override bool HasReachedEnd(ResponseBase? currentResponse)
+        {
+            if (!(currentResponse is WallhavenResponse))
+                return false;
+            var response = currentResponse as WallhavenResponse;
+            if (response == null || response.meta == null)
+                return false;
+            return response.meta.current_page == response.meta.last_page;
+        }
+
+        #region command 
+
+
+
+        #endregion
+    }
+
+    #endregion
+
     #region query definations
     //request definations
     public class WallHavenCategories
@@ -242,8 +462,6 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
     }
     #endregion
 
-
-
     #region response definations
     public class WallhavenQuery
     {
@@ -286,214 +504,4 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
     }
     #endregion
 
-
-    #region request defainations
-
-    public class WallHavenRequest : RequestBase
-    {
-        #region properties
-
-        public override Type Type => typeof(WallHavenRequest);
-
-        public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
-
-        private bool isGeneralEnable = false;
-        public bool IsGeneralEnable
-        {
-            get => isGeneralEnable;
-            set => SetProperty(ref isGeneralEnable, value);
-        }
-
-        private bool isAnimationEnable = true;
-        public bool IsAnimationEnable
-        {
-            get => isAnimationEnable;
-            set => SetProperty(ref isAnimationEnable, value);
-        }
-
-        private bool isPeopleEnable = false;
-        public bool IsPeopleEnable
-        {
-            get => isPeopleEnable;
-            set => SetProperty(ref isPeopleEnable, value);
-        }
-
-        [JsonIgnore]
-        private Dictionary<string, string> orderText = new Dictionary<string, string>()
-        {
-            {"一天","1d" },
-            {"三天","3d" },
-            {"一周","1w" },
-            {"一月","1M" },
-            {"三月","3M" },
-            {"六月","6M" },
-            {"一年","1y" }
-        };
-        private List<string> orderLists = new List<string>() { "一天", "三天", "一周", "一月", "三月", "六月", "一年" };
-        public List<string> OrderLists
-        {
-            get => orderLists;
-        }
-
-        private string searchOrderString = "1y";
-
-        private string selectedOrder = "一年";
-
-        public string SelectedOrder
-        {
-            get => selectedOrder;
-            set
-            {
-                SetProperty(ref selectedOrder, value);
-                searchOrderString = orderText[value];
-            }
-        }
-
-        private long curPage = 0;
-        [JsonIgnore]
-        public long CurPage
-        {
-            get => curPage;
-            set => SetProperty(ref curPage, value);
-        }
-
-        private long totalPage = 1;
-        [JsonIgnore]
-        public long TotalPage
-        {
-            get => totalPage;
-            set => SetProperty(ref totalPage, value);
-        }
-
-        private string wallHavenSearchKeyWords = "";
-        /// <summary>
-        /// wallHaven search keyword
-        /// </summary>
-        public string WallHavenSearchKeyWords
-        {
-            get => wallHavenSearchKeyWords;
-            set => SetProperty(ref wallHavenSearchKeyWords, value);
-        }
-        #endregion
-        [JsonIgnore]
-        private List<string> WallHavenCache = new List<string>();
-        [JsonIgnore]
-        public override string RequestUrl => @"https://wallhaven.cc/api/v1/search";
-
-
-        List<string> downloadTask = new List<string>();
-
-        public override void ResetRequest()
-        {
-            CurPage = 0;
-            TotalPage = 1;
-            IsGeneralEnable = false;
-            IsAnimationEnable = true;
-            IsPeopleEnable = false;
-        }
-
-        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs)
-        {
-            var query = new WallhavenRequestQuery();
-            query.atleast = "";
-            query.queryCore = new WallhavenRequestQueryCore();
-            query.sorting = WallHavenSorting.toplist;
-            query.topRange = searchOrderString;
-            query.catagories.none = false;
-            query.catagories.people = IsPeopleEnable;
-            query.catagories.anime = IsAnimationEnable;
-            query.catagories.general = IsGeneralEnable;
-            query.resolutions = "";
-            query.ratios = "";
-            query.purity.none = false;
-            query.purity.sfw = true;
-            query.purity.sketchy = true;
-            query.page = AutoIncreasePage?CurPage+1:CurPage;
-            
-            if (!string.IsNullOrEmpty(WallHavenSearchKeyWords))
-                query.queryCore.addTags = new List<string>() { WallHavenSearchKeyWords };
-
-            return query;
-        }
-
-
-        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation] CancellationToken token)
-        {
-            if (!(currentResponse is WallhavenResponse response) || response.meta == null)
-                yield break;
-
-            TotalPage = response.meta.last_page;
-            CurPage = response.meta.current_page;
-
-            if (response.data != null)
-            {
-                foreach (var x in response.data)
-                {
-                    if (token.IsCancellationRequested)
-                        yield break;
-
-                    if (string.IsNullOrEmpty(x?.path))
-                        continue;
-
-                    var curFileName = x.id;
-                    var exten = "." + x?.file_type?.Split('/').LastOrDefault();
-                    var totalPath = FileMapper.NormalPictureDir.PathCombine(curFileName + exten);
-
-                    try
-                    {
-                        if (!totalPath.IsFileExist())
-                        {
-                            if (x != null)
-                            {
-                                var totalFile = curFileName + exten;
-                                if (downloadTask.Contains(totalFile))
-                                    continue;
-
-                                downloadTask.Add(totalFile);
-                                await x.path.DownloadFileAsync(FileMapper.NormalPictureDir, curFileName + exten, 4096);
-                                downloadTask.Remove(totalFile);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.WriteLine(ex);
-                    }
-
-                    if (totalPath.IsFileExist())
-                        yield return totalPath;
-                }
-            }
-        }
-
-
-
-        public override async Task<ResponseBase?> Request(RequestQueryBase? query)
-        {
-            if (!(query is WallhavenRequestQuery wallHavenQuery))
-                return null;
-            var curQuery = wallHavenQuery.ToQuery();
-            var requestUrl = RequestUrl + curQuery;
-            var res = await requestUrl.GetAsync();
-            return await res.GetJsonAsync<WallhavenResponse?>();
-        }
-
-        public override bool HasReachedEnd(ResponseBase? currentResponse)
-        {
-            if (!(currentResponse is WallhavenResponse))
-                return false;
-            var response = currentResponse as WallhavenResponse;
-            if (response == null || response.meta == null)
-                return false;
-            return response.meta.current_page == response.meta.last_page;
-        }
-
-        #region command 
-
-
-
-        #endregion
-    }
-
-    #endregion
 }

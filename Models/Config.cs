@@ -42,8 +42,8 @@ namespace DesktopTimer.Models
 
                 (t.Value switch
                 {
-                    "User" => (Action?)WriteUserSetting,
-                    "Program" => (Action?)WriteProgramSetting,
+                    ConfigType.User => (Action?)WriteUserSetting,
+                    ConfigType.Program => (Action?)WriteProgramSetting,
                     _ => null
                 })?.Invoke();
             });
@@ -71,7 +71,7 @@ namespace DesktopTimer.Models
         {
             try
             {
-                
+                  
                 var str = FileMapper.ProgramSettingFile.ReadText();
                 if (!str.IsNullOrEmpty())
                 {
@@ -79,14 +79,22 @@ namespace DesktopTimer.Models
                     if (curData != null)
                     {
                         ProgramConfigData = curData;
+                        if (ProgramConfigData.LocalCollectPath.IsNullOrEmpty())
+                        {
+                            ProgramConfigData.LocalCollectPath = FileMapper.CollectionPictureDir;
+                        }
                         ReadTimerBackgroundSetting();
                     }
                 }
                 else
                 {
+                    if (ProgramConfigData.LocalCollectPath.IsNullOrEmpty())
+                    {
+                        ProgramConfigData.LocalCollectPath = FileMapper.CollectionPictureDir;
+                    }
                     WriteProgramSetting();
                 }
-
+                
             }
             catch (Exception ex)
             {
@@ -318,7 +326,7 @@ namespace DesktopTimer.Models
         }
 
         [JsonIgnore]
-        int particleLinkDistance = 100;
+        int particleLinkDistance = 80;
 
         public int ParticleLinkDistance
         {
@@ -327,7 +335,7 @@ namespace DesktopTimer.Models
         }
 
         [JsonIgnore]
-        int particleMaxConnection = 10;
+        int particleMaxConnection = 5;
 
         public int ParticleMaxConnection
         {
@@ -336,7 +344,7 @@ namespace DesktopTimer.Models
         }
 
         [JsonIgnore]
-        int mouseLinkDistance = 100;
+        int mouseLinkDistance = 80;
 
         public int MouseLinkDistance
         {
@@ -354,7 +362,7 @@ namespace DesktopTimer.Models
         }
 
         [JsonIgnore]
-        bool enableColorfulBackground = true;
+        bool enableColorfulBackground = false;
 
         public bool EnableColorfulBackground
         {
@@ -431,7 +439,7 @@ namespace DesktopTimer.Models
 
 
         [JsonIgnore]
-        AudioWaveControl.ApperenceType apperenceType = AudioWaveControl.ApperenceType.Rectangles;
+        AudioWaveControl.ApperenceType apperenceType = AudioWaveControl.ApperenceType.BrokenLinesCircle;
 
         public AudioWaveControl.ApperenceType ApperenceType
         {
@@ -512,7 +520,7 @@ namespace DesktopTimer.Models
 
 
         [JsonIgnore]
-        double ellipseRadius = 20;
+        double ellipseRadius = 150;
 
         public double EllipseRadius
         {

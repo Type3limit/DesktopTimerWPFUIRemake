@@ -263,7 +263,21 @@ namespace DesktopTimer.Helpers
                 return file;
             }
         }
-
+        /// <summary>
+        /// 用户配置文件
+        /// </summary>
+        public static string TranslateConfigFile
+        {
+            get
+            {
+                var file = ConfigureDir.PathCombine("TranslateConfig.json");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
         #endregion
     }
 

@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
+using DesktopTimer.models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,11 +35,20 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         public abstract Type Type { get; }
 
         public virtual RequestBaseUseage RequestUseage  => RequestBaseUseage.NormalRequest;
+
+        public static string DisplayName => "（无）";
+
+        public MainWorkModel? ModelInstance = null;
         /// <summary>
         /// url of current request
         /// </summary>
         /// <returns></returns>
-        public virtual string RequestUrl  =>  "";
+        protected string requestUrl = "";
+        public virtual string RequestUrl
+        {
+            get=> requestUrl;
+            set=>SetProperty(ref requestUrl,value);
+        }
         
 
         /// <summary>

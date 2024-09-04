@@ -32,6 +32,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
 
+        public static new string DisplayName => "本地图片";
+
         #region properties
         [JsonIgnore]
         [ObservableProperty]

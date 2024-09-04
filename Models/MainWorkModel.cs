@@ -5,6 +5,7 @@ using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
 using DesktopTimer.Models;
 using DesktopTimer.Models.BackgroundWorkingModel;
+using DesktopTimer.Views.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace DesktopTimer.models
+namespace DesktopTimer.Models
 {
     public class MainWorkModel: ObservableObject
     {
@@ -38,12 +39,35 @@ namespace DesktopTimer.models
             get => backgroundImageRequest??(backgroundImageRequest = new BackgroundImageRequestModel(this));
         }
 
+        private TranslateModel? translator = null;
+        /// <summary>
+        /// translator
+        /// </summary>
+        public TranslateModel Translator
+        {
+            get => translator ?? (translator = new TranslateModel(this));
+        }
+
+
         private LocalConfig? config =  null;
+        /// <summary>
+        /// local config
+        /// </summary>
         public LocalConfig Config
         {
             get=>config??(config = new LocalConfig(this));
         }
 
+
+        private List<HotKey> shotKeys = new List<HotKey>();
+        /// <summary>
+        /// ShortKeys
+        /// </summary>
+        public List<HotKey> ShotKeys
+        {
+            get => shotKeys;
+            set => SetProperty(ref shotKeys, value);
+        }
         #endregion
 
         #region delegate 
@@ -72,7 +96,7 @@ namespace DesktopTimer.models
             get => exitProgramCommand ?? (exitProgramCommand = new RelayCommand(() =>
             {
                 WeakReferenceMessenger.Default.Send(new RequestCloseProgramMessage());
-            }));
+            })); 
         }
 
         private ICommand? openFolderCommand;
@@ -93,6 +117,7 @@ namespace DesktopTimer.models
                         _=>null,
                     };
                     lambda?.Invoke();
+                    WeakReferenceMessenger.Default.Send(new RequestSaveConfigMessage( ConfigType.Program));
                 }
             }));
         }
@@ -119,7 +144,14 @@ namespace DesktopTimer.models
             };
             timer.Start();
         }
-
+        /// <summary>
+        /// set the discription of shortKeys
+        /// </summary>
+        /// <param name="str"></param>
+        public void SetShotKeyDiscribe(List<HotKey> hotKeys)
+        {
+            ShotKeys = hotKeys;
+        }
         #endregion
     }
 }

@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:DesktopTimer.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:DesktopTimer.models"
+    xmlns:model="clr-namespace:DesktopTimer.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     x:Name="rootPage"
     Title="TimerPage"
@@ -32,6 +32,7 @@
         <Grid>
             <Frame
                 x:Name="ContentFrame"
+                Navigating="ContentFrame_Navigating"
                 Panel.ZIndex="0"
                 DataContext="{Binding ElementName=rootPage, Path=DataContext}"
                 Opacity="{Binding DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}" />
@@ -101,17 +102,43 @@
 
 
     <Page.ContextMenu>
-        <ContextMenu>
+        <ContextMenu Opened="ContextMenu_Opened">
+
+            <ui:MenuItem
+                x:Name="NextBackground"
+                Command="{Binding DisplaySetting.RequestFlushCommand}"
+                Header="刷新背景"
+                Visibility="{Binding BackgroundImageRequest.IsPictureBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
+
+            <ui:MenuItem
+                Command="{Binding DisplaySetting.CollectCurrentImageCommand}"
+                Header="收藏背景"
+                Visibility="{Binding BackgroundImageRequest.IsPictureBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
+
+            <ui:MenuItem
+                Command="{Binding DisplaySetting.OpenExtraSettingCommand}"
+                Header="打开网页地址"
+                Visibility="{Binding BackgroundImageRequest.IsWebBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
+
+
             <ui:MenuItem
                 x:Name="OpenSetting"
                 Command="{Binding DisplaySetting.OpenSettingCommand}"
                 Header="打开设置" />
-            <ui:MenuItem
-                x:Name="NextBackground"
-                Command="{Binding DisplaySetting.RequestFlushCommand}"
-                Header="刷新背景" />
 
-            <ui:MenuItem Command="{Binding DisplaySetting.SetBackgroundfreshCommand}">
+            <ui:MenuItem Command="{Binding DisplaySetting.SetTopMostCommand}">
+                <ui:MenuItem.Header>
+                    <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
+                        <ui:ToggleSwitch Foreground="White" IsChecked="{Binding DisplaySetting.IsTopMost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Text="窗口置顶" />
+                    </StackPanel>
+                </ui:MenuItem.Header>
+            </ui:MenuItem>
+
+            <ui:MenuItem Command="{Binding DisplaySetting.SetBackgroundfreshCommand}" Visibility="{Binding BackgroundImageRequest.IsPictureBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}">
                 <ui:MenuItem.Header>
                     <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
                         <ui:ToggleSwitch Foreground="White" IsChecked="{Binding DisplaySetting.ShouldPauseFresh, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
@@ -122,7 +149,6 @@
                     </StackPanel>
                 </ui:MenuItem.Header>
             </ui:MenuItem>
-
 
             <ui:MenuItem
                 x:Name="CloseProgram"

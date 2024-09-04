@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:DesktopTimer.Views.BackgroundViews"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:DesktopTimer.models"
+    xmlns:model="clr-namespace:DesktopTimer.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     x:Name="RootPage"
     Title="PictureViewsPage"
@@ -16,9 +16,6 @@
     mc:Ignorable="d">
 
     <Grid>
-
-
-
         <ui:Image
             x:Name="CurImage"
             Panel.ZIndex="9"
@@ -30,8 +27,5 @@
             Source="{Binding DisplaySetting.BackgroundView, UpdateSourceTrigger=PropertyChanged}"
             Stretch="Uniform"
             UseLayoutRounding="True" />
-
-
-
     </Grid>
 </Page>
