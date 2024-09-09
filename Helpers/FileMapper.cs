@@ -68,6 +68,19 @@ namespace DesktopTimer.Helpers
                 return cur;
             }
         }
+        /// <summary>
+        /// 生成背景目录
+        /// </summary>
+        public static string GeneratedPictureDir
+        {
+            get
+            {
+                var cur = Path.Combine(PictureCacheDir, "Generate");
+                if (!Directory.Exists(cur))
+                    Directory.CreateDirectory(cur);
+                return cur;
+            }
+        }
 
         /// <summary>
         /// 本地背景目录
@@ -203,6 +216,19 @@ namespace DesktopTimer.Helpers
             }
         }
 
+        /// <summary>
+        /// 预设文件目录
+        /// </summary>
+        public static string AssetsFileDir
+        {
+            get
+            {
+                string currentDir = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "Assets";
+                if (!Directory.Exists(currentDir))
+                    Directory.CreateDirectory(currentDir);
+                return currentDir;
+            }
+        }
         #endregion
 
         #region file
@@ -271,6 +297,21 @@ namespace DesktopTimer.Helpers
             get
             {
                 var file = ConfigureDir.PathCombine("TranslateConfig.json");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+        /// <summary>
+        /// SD 预设文件
+        /// </summary>
+        public static string StableDiffusionPresetFile
+        {
+            get
+            {
+                var file = AssetsFileDir.PathCombine("StableDiffsionPresets.json");
                 if (!file.IsFileExist())
                 {
                     File.Create(file).Close();

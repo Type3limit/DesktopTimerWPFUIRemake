@@ -39,7 +39,14 @@
     mc:Ignorable="d">
 
     <Window.Resources>
-
+        <Style x:Key="labelTextBlock" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Width" Value="160" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Left" />
+        </Style>
+        <helper:BoolToReverseVisiableConverters x:Key="bool2ReVisi" />
+        <helper:BoolToVisiableConverters x:Key="bool2Visi" />
         <helper:HalfConverter x:Key="percentConverter" />
         <helper:TimeSpanToSecondsConverter x:Key="TimeSpanToSecondsConverter" />
         <helper:TimeSpanFormatter x:Key="timeSpanFormatter" />
@@ -287,6 +294,105 @@
 
                                 </StackPanel>
                             </StackPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type def:StableDiffusion}">
+                            <Grid>
+                                <StackPanel Visibility="{Binding CanDoNextRequest, Converter={StaticResource bool2Visi}, UpdateSourceTrigger=PropertyChanged}">
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="API地址：" />
+                                        <TextBox Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="模型：" />
+                                        <ComboBox
+                                            DisplayMemberPath="model_name"
+                                            ItemsSource="{Binding Models, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ia:Interaction.Triggers>
+                                                <ia:EventTrigger EventName="SelectionChanged">
+                                                    <ia:InvokeCommandAction Command="{Binding OnModelChangedCommand}" />
+                                                </ia:EventTrigger>
+                                            </ia:Interaction.Triggers>
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="采样器：" />
+                                        <ComboBox
+                                            DisplayMemberPath="name"
+                                            ItemsSource="{Binding Samplers, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding SelectedSampler, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词：" />
+                                        <TextBox Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="反向提示词：" />
+                                        <TextBox Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="生成步数：" />
+                                        <ui:NumberBox Value="{Binding Steps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="图像宽度：" />
+                                        <ui:NumberBox
+                                            Maximum="3840"
+                                            Minimum="1"
+                                            Value="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="图像高度：" />
+                                        <ui:NumberBox
+                                            Maximum="3840"
+                                            Minimum="1"
+                                            Value="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="单次生成数量：" />
+                                        <ui:NumberBox
+                                            Maximum="8"
+                                            Minimum="1"
+                                            Value="{Binding GenerateNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="生成迭代数：" />
+                                        <ui:NumberBox
+                                            Maximum="8"
+                                            Minimum="1"
+                                            Value="{Binding GenerateTimes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+
+                                    <ui:Button
+                                        Margin="10,10"
+                                        Command="{Binding RequestNewQueryCommand}"
+                                        Icon="{ui:SymbolIcon Symbol=Search48}" />
+                                </StackPanel>
+
+                                <ui:LoadingScreen
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    Visibility="{Binding CanDoNextRequest, Converter={StaticResource bool2ReVisi}, UpdateSourceTrigger=PropertyChanged}">
+                                    <ui:LoadingScreen.Content>
+                                        <StackPanel>
+                                            <TextBlock Text="正在生成..." />
+                                            <ProgressBar Value="" />
+                                        </StackPanel>
+                                    </ui:LoadingScreen.Content>
+                                </ui:LoadingScreen>
+                            </Grid>
+
                         </DataTemplate>
                     </ResourceDictionary>
 

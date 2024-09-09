@@ -15,7 +15,7 @@ using System.Windows.Input;
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
 
-    public partial class LocalFileQuery: RequestQueryBase
+    public partial class LocalFileQuery:ObservableObject, IRequestQueryBase
     {
         [ObservableProperty]
         int page = 0;
@@ -23,7 +23,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         [ObservableProperty]
         string keyWords = "";
     }
-    public partial class LocalFileResponse:ResponseBase
+    public partial class LocalFileResponse: ObservableObject, IResponseBase
     {
         [ObservableProperty]
         public List<string> files = new List<string>();
@@ -36,6 +36,11 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
 
         public static new string DisplayName => "本地图片";
+
+        public override bool WithAutomaticOption
+        {
+            get => true; set => base.WithAutomaticOption = value;
+        }
 
         #region properties
         [JsonIgnore]
@@ -101,7 +106,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             LocalFileCount = 0;
         }
 
-        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage, params object[]? objs)
+        public override IRequestQueryBase? BuildQuery(bool AutoIncreasePage, params object[]? objs)
         {
             return new LocalFileQuery()
             {
@@ -111,12 +116,12 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
 
-        public override Task<ResponseBase?> Request(RequestQueryBase? query)
+        public override Task<IResponseBase?> Request(IRequestQueryBase? query)
         {
 
             if(query is not LocalFileQuery localQuery)
             {
-                return Task.FromResult<ResponseBase?>(null);
+                return Task.FromResult<IResponseBase?>(null);
             }
 
             var response = new LocalFileResponse();
@@ -138,10 +143,10 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
             response.Files = resultList.Skip(localQuery.Page * PageSize).Take(PageSize).ToList();
 
-            return Task.FromResult<ResponseBase?>(response);
+            return Task.FromResult<IResponseBase?>(response);
         }
 
-        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation]CancellationToken canceller)
+        public override async IAsyncEnumerable<object?> ParseResult(IResponseBase? currentResponse, [EnumeratorCancellation]CancellationToken canceller)
         {
             if (!(currentResponse is LocalFileResponse))
                 yield break;
@@ -162,7 +167,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         }
 
-        public override bool HasReachedEnd(ResponseBase? currentResponse)
+        public override bool HasReachedEnd(IResponseBase? currentResponse)
         {
             return TotalPage==CurPage;
         }

@@ -28,6 +28,9 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         public override RequestBaseUseage RequestUseage => RequestBaseUseage.PictureBackground;
 
+        public override bool WithAutomaticOption { 
+            get => true; set => base.WithAutomaticOption = value; }
+
         public static new string DisplayName => "WallHaven在线图片";
 
         private bool isGeneralEnable = false;
@@ -133,7 +136,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             IsPeopleEnable = false;
         }
 
-        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs)
+        public override IRequestQueryBase? BuildQuery(bool AutoIncreasePage ,params object[]? objs)
         {
             var query = new WallhavenRequestQuery();
             query.atleast = "";
@@ -158,7 +161,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
 
-        public override async IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, [EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<object?> ParseResult(IResponseBase? currentResponse, [EnumeratorCancellation] CancellationToken token)
         {
             if (!(currentResponse is WallhavenResponse response) || response.meta == null)
                 yield break;
@@ -209,7 +212,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
 
 
-        public override async Task<ResponseBase?> Request(RequestQueryBase? query)
+        public override async Task<IResponseBase?> Request(IRequestQueryBase? query)
         {
             try
             {
@@ -228,7 +231,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
            
         }
 
-        public override bool HasReachedEnd(ResponseBase? currentResponse)
+        public override bool HasReachedEnd(IResponseBase? currentResponse)
         {
             if (!(currentResponse is WallhavenResponse))
                 return false;
@@ -452,7 +455,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
     }
 
-    public class WallhavenRequestQuery : RequestQueryBase
+    public class WallhavenRequestQuery : IRequestQueryBase
     {
         public WallhavenRequestQueryCore? queryCore { set; get; }
         public WallHavenCategories catagories { set; get; } = new WallHavenCategories();
@@ -505,7 +508,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         public string? path { set; get; }
     }
 
-    public class WallhavenResponse : ResponseBase
+    public class WallhavenResponse : IResponseBase
     {
         public List<WallhavenData?>? data { set; get; }
         public WallhavenMeta? meta { set; get; }

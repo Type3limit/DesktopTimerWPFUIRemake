@@ -2,10 +2,16 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:FFME="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+    xmlns:con="clr-namespace:DesktopTimer.Helpers"
     xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
+    xmlns:ia="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:icon="http://metro.mahapps.com/winfx/xaml/iconpacks"
     xmlns:model="clr-namespace:DesktopTimer.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+
+    <con:BoolToReverseVisiableConverters x:Key="bool2ReVisi" />
+    <con:BoolToVisiableConverters x:Key="bool2Visi" />
 
     <Style x:Key="labelTextBlock" TargetType="{x:Type TextBlock}">
         <Setter Property="FontSize" Value="14" />
@@ -123,7 +129,6 @@
     </DataTemplate>
 
 
-
     <DataTemplate DataType="{x:Type def:LocalVideo}">
         <StackPanel>
             <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -221,6 +226,113 @@
 
 
         </StackPanel>
+    </DataTemplate>
+
+
+    <DataTemplate DataType="{x:Type def:StableDiffusion}">
+        <Grid>
+            <StackPanel Visibility="{Binding CanDoNextRequest, Converter={StaticResource bool2Visi}, UpdateSourceTrigger=PropertyChanged}">
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="API地址：" />
+                    <TextBox MinWidth="200" Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="模型：" />
+                    <ComboBox
+                        DisplayMemberPath="model_name"
+                        ItemsSource="{Binding Models, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                     
+                    </ComboBox>
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="采样器：" />
+                    <ComboBox
+                        DisplayMemberPath="name"
+                        ItemsSource="{Binding Samplers, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectedSampler, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词预设：" />
+                    <ComboBox
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{Binding SDPresets, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectedPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                     
+                    </ComboBox>
+                </StackPanel>
+
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词：" />
+                    <TextBox MinWidth="200" Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="反向提示词：" />
+                    <TextBox MinWidth="200" Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="生成步数：" />
+                    <ui:NumberBox Value="{Binding Steps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="图像宽度：" />
+                    <ui:NumberBox
+                        Maximum="3840"
+                        Minimum="1"
+                        Value="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="图像高度：" />
+                    <ui:NumberBox
+                        Maximum="3840"
+                        Minimum="1"
+                        Value="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="单次生成数量：" />
+                    <ui:NumberBox
+                        Maximum="8"
+                        Minimum="1"
+                        Value="{Binding GenerateNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource labelTextBlock}" Text="生成迭代数：" />
+                    <ui:NumberBox
+                        Maximum="8"
+                        Minimum="1"
+                        Value="{Binding GenerateTimes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+
+                <ui:Button
+                    Margin="10,10"
+                    Command="{Binding RequestNewQueryCommand}"
+                    Icon="{ui:SymbolIcon Symbol=Search48}" />
+            </StackPanel>
+
+            <ui:LoadingScreen
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                Visibility="{Binding CanDoNextRequest, Converter={StaticResource bool2ReVisi}, UpdateSourceTrigger=PropertyChanged}">
+                <ui:LoadingScreen.Content>
+                    <StackPanel>
+                        <TextBlock Text="正在生成..." />
+                    </StackPanel>
+                </ui:LoadingScreen.Content>
+            </ui:LoadingScreen>
+        </Grid>
+
     </DataTemplate>
 
 </ResourceDictionary>

@@ -37,6 +37,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             { LocalBackground.DisplayName,typeof(LocalBackground)},
             { LocalVideo.DisplayName,typeof(LocalVideo) },
             { WebBrowser.DisplayName,typeof(WebBrowser) },
+            { StableDiffusion.DisplayName,typeof(StableDiffusion) }
         };
         #endregion
 
@@ -97,7 +98,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
         /// <summary>
         /// response of current request 
         /// </summary>
-        ResponseBase? currentResponse = null;
+        IResponseBase? currentResponse = null;
 
         /// <summary>
         /// parsed results
@@ -322,31 +323,45 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
                 }
                 RequestCanceller = new CancellationTokenSource();
 
-                if (currentResponse == null)
+                if (SelectedRequestInstance.WithAutomaticOption)
                 {
-                    var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
-                    currentResponse = await SelectedRequestInstance.Request(query);
-                    if (currentResponse == null)//request failed!
-                        return;
-                    results = SelectedRequestInstance.ParseResult(currentResponse, RequestCanceller.Token);
-                    if (DisableAutoPageIncrease)
-                        DisableAutoPageIncrease = false;
-                }
-
-                if (results != null)
-                {
-                    await foreach (var itr in results.WithCancellation(RequestCanceller.Token))
+                    if (currentResponse == null)
                     {
-                        if (itr == null && SelectedRequestInstance.HasReachedEnd(currentResponse))//when reaching end ,reset request to the first
+                        var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
+                        currentResponse = await SelectedRequestInstance.Request(query);
+                        if (currentResponse == null)
+                            return;
+                        results = SelectedRequestInstance.ParseResult(currentResponse, RequestCanceller?.Token??CancellationToken.None);
+                        if (DisableAutoPageIncrease)
+                            DisableAutoPageIncrease = false;
+                    }
+
+                    if (results != null)
+                    {
+                        await foreach (var itr in results.WithCancellation(RequestCanceller?.Token?? CancellationToken.None))
                         {
-                            SelectedRequestInstance.ResetRequest();
-                            break;
+                            if (itr == null && SelectedRequestInstance.HasReachedEnd(currentResponse))//when reaching end ,reset request to the first
+                            {
+                                SelectedRequestInstance.ResetRequest();
+                                break;
+                            }
+                            else
+                            {
+                                if (itr is string str)
+                                    WeakReferenceMessenger.Default.Send(new BackgroundSourceUpdateMessage(str));
+                            }
                         }
-                        else
+                    }
+                }
+                else
+                {
+                    if (SelectedRequestInstance.AfterWhenOneRequestReadyAct == null)
+                    {
+                        SelectedRequestInstance.AfterWhenOneRequestReadyAct = (itr) =>
                         {
                             if (itr is string str)
                                 WeakReferenceMessenger.Default.Send(new BackgroundSourceUpdateMessage(str));
-                        }
+                        };
                     }
                 }
             }
@@ -354,7 +369,14 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             {
                 Trace.WriteLine(ex);
             }
+            finally
+            {
+                RequestCanceller = null;
+            }
         }
+
+
+
         #endregion
 
         #endregion

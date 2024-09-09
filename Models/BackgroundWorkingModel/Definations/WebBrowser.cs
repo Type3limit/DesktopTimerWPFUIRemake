@@ -45,22 +45,22 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         }
 
 
-        public override RequestQueryBase? BuildQuery(bool AutoIncreasePage, params object[]? objs)
+        public override IRequestQueryBase? BuildQuery(bool AutoIncreasePage, params object[]? objs)
         {
             return null;
         }
 
-        public override bool HasReachedEnd(ResponseBase? currentResponse)
+        public override bool HasReachedEnd(IResponseBase? currentResponse)
         {
             return false;
         }
 
-        public override IAsyncEnumerable<object?> ParseResult(ResponseBase? currentResponse, CancellationToken canceller)
+        public override IAsyncEnumerable<object?> ParseResult(IResponseBase? currentResponse, CancellationToken canceller)
         {
             return null;
         }
 
-        public override Task<ResponseBase?> Request(RequestQueryBase? query)
+        public override Task<IResponseBase?> Request(IRequestQueryBase? query)
         {
             return null;
         }
