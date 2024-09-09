@@ -67,6 +67,7 @@
                                 FontSize="12"
                                 Text="收藏位置：" />
                             <ui:TextBox
+                                MinWidth="150"
                                 MaxWidth="500"
                                 Margin="0,0,10,0"
                                 BorderThickness="0"
@@ -90,7 +91,10 @@
                             TextBlock.FontStyle="Oblique">
                             <TextBlock.ToolTip>
 
-                                <ItemsControl ItemsSource="{Binding ShotKeys}">
+                                <ItemsControl
+                                    Width="Auto"
+                                    Height="Auto"
+                                    ItemsSource="{Binding ShotKeys}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <StackPanel />
@@ -98,10 +102,10 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type helper:HotKey}">
-                                            <Grid Width="300" Margin="5,10">
+                                            <Grid Width="Auto" Margin="5,10">
                                                 <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3*" />
                                                     <ColumnDefinition Width="2.5*" />
-                                                    <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock
                                                     Grid.Column="0"
@@ -225,6 +229,47 @@
                                 </EventTrigger>
                             </TextBlock.Triggers>
                         </TextBlock>
+
+                        <ui:CardExpander Header="翻译相关项">
+                            <StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="百度翻译API:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.BaiduTranslateUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="百度翻译APPID:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.BaiduAppId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="百度翻译SecretKey:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.BaiduSecretKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="有道翻译API:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.YoudaoTranslateUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="有道翻译APPID:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.YoudaoAppId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="有道翻译SecretKey:" />
+                                    <ui:TextBox Text="{Binding Config.TranslateConfigData.YouDaoSecretKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                </StackPanel>
+
+                                <ui:Button Command="{Binding Config.SaveTranslateConfigCommand}" Content="保存" />
+                                <ui:Button
+                                    Margin="10,0"
+                                    Command="{Binding Config.ResetTranslateConfigCommand}"
+                                    Content="重置" />
+                            </StackPanel>
+
+                        </ui:CardExpander>
 
                     </StackPanel>
 
@@ -549,9 +594,9 @@
                                 Text="背景圆角度：" />
                             <Slider
                                 VerticalAlignment="Center"
-                                Maximum="1"
+                                Maximum="90"
                                 Minimum="0"
-                                SmallChange="0.01"
+                                SmallChange="1"
                                 Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                 <ia:Interaction.Triggers>
                                     <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
@@ -564,9 +609,9 @@
                                 Width="150"
                                 Margin="5,0"
                                 VerticalAlignment="Center"
-                                Maximum="1"
+                                Maximum="90"
                                 Minimum="0"
-                                SmallChange="0.01"
+                                SmallChange="1"
                                 Value="{Binding DisplaySetting.BackgroundCornerRadiusValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                 <ia:Interaction.Triggers>
                                     <ia:EventTrigger EventName="PreviewLostKeyboardFocus">

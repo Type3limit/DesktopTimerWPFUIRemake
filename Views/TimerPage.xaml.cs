@@ -31,7 +31,7 @@ namespace DesktopTimer.Views
         public event onMouseMove? MouseMoveHandler;
         MainWorkModel? modelInstance = null;
 
-        object? lastContent = null;
+        bool HasLoaded = false;
 
         PictureViewsPage? picturePage = null;
 
@@ -39,6 +39,7 @@ namespace DesktopTimer.Views
 
         UpperLayerPage? upperLayerPage = null;
 
+        VideoViewsPage ? videoPage = null;
 
         public TimerPage()
         {
@@ -47,7 +48,14 @@ namespace DesktopTimer.Views
             Unloaded += TimerPage_Unloaded;
             DataContextChanged += TimerPage_DataContextChanged;
 
-
+            WeakReferenceMessenger.Default.Register<RequestModelChangedMessage>(this, (e, t) =>
+            {
+                if(HasLoaded)
+                {
+                    OnSelectedRequestModelTypeChanged(t.Value);
+                }
+                
+            });
         }
         private void TimerPage_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -56,21 +64,21 @@ namespace DesktopTimer.Views
 
         private void TimerPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            HasLoaded =false;
             WeakReferenceMessenger.Default.Unregister<RequestModelChangedMessage>(this);
         }
 
 
         private void TimerPage_Loaded(object sender, RoutedEventArgs e)
         {
-            //default with picture page
-            CheckPicturePage();
-            ContentFrame.Navigate(picturePage);
+            HasLoaded = true;
+
             CheckUpperLayerPage();
             UpperLayerFrame.Navigate(upperLayerPage);
-            WeakReferenceMessenger.Default.Register<RequestModelChangedMessage>(this, (e, t) => 
-            {
-                OnSelectedRequestModelTypeChanged(t.Value);
-            });
+            
+            OnSelectedRequestModelTypeChanged(modelInstance?.BackgroundImageRequest?.SelectedRequestInstance?.RequestUseage??
+                RequestBaseUseage.PictureBackground);
+            
         }
 
         void CheckUpperLayerPage()
@@ -96,8 +104,18 @@ namespace DesktopTimer.Views
             if (picturePage == null)
             {
                 picturePage = new PictureViewsPage();
-                picturePage.MouseMoveHandler += PicturesView_MouseMoveHandler; ;
+                picturePage.MouseMoveHandler += PicturesView_MouseMoveHandler; 
                 picturePage.DataContext = this.DataContext;
+            }
+        }
+
+        void CheckVideoPage()
+        {
+            if(videoPage == null)
+            {
+                videoPage = new VideoViewsPage();
+                videoPage.MouseMoveHandler += PicturesView_MouseMoveHandler;
+                videoPage.DataContext = this.DataContext;
             }
         }
 
@@ -116,7 +134,8 @@ namespace DesktopTimer.Views
 
                 case RequestBaseUseage.VideoBackground:
                     {
-                        //TODO:add video background page
+                        CheckVideoPage();
+                        ContentFrame.Navigate(videoPage);
                         break;
                     }
 
@@ -157,7 +176,7 @@ namespace DesktopTimer.Views
 
         private void ContentFrame_Navigating(object sender, NavigatingCancelEventArgs e)
         {
-            Trace.WriteLine($"load to {e}");
+            Trace.WriteLine($"load to {e?.Uri}");
         }
     }
 }

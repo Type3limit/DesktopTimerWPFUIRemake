@@ -1,4 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
@@ -53,7 +56,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         [JsonPropertyName("LocalPath")]
         [ObservableProperty]
-        string localFileLoadPath = "";
+        string? localFileLoadPath = "";
 
         [JsonIgnore]
         List<string> LocalFiles = new List<string>();
@@ -63,6 +66,33 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         string keyWords = "";
 
         #endregion
+
+        #region constructor
+
+        public LocalBackground()
+        {
+            WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, (e, t) => 
+            { 
+               
+                LocalFileLoadPath = ModelInstance?.Config.UserConfigData.LocalPictureLoadPath;
+            });
+        }
+
+        #endregion
+
+        ICommand? browseDirectoryCommand = null;
+        public ICommand BrowseDirectoryCommand
+        {
+            get=>browseDirectoryCommand??(browseDirectoryCommand = new RelayCommand(() => 
+            {
+                System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+                var res = folderBrowserDialog.ShowDialog();
+                if (res == System.Windows.Forms.DialogResult.OK)
+                {
+                    LocalFileLoadPath = folderBrowserDialog.SelectedPath;
+                }
+            }));
+        }
 
 
         public override void ResetRequest()
@@ -92,7 +122,12 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             var response = new LocalFileResponse();
             if (LocalFiles.Count<=0&& Path.Exists(LocalFileLoadPath))
             {
-                LocalFiles = Directory.EnumerateFiles(LocalFileLoadPath, @"\.png$|\.jpg$|\.jpeg$|\.bmp$", SearchOption.AllDirectories).ToList();
+                if (ModelInstance != null)
+                {
+                    ModelInstance.Config.UserConfigData.LocalPictureLoadPath = LocalFileLoadPath;
+                    WeakReferenceMessenger.Default.Send(new RequestSaveConfigMessage(ConfigType.User));
+                }
+                LocalFiles = RegexDirectoryEnumrator.GetFiles(LocalFileLoadPath, @"\.png$|\.jpg$|\.jpeg$|\.bmp$", SearchOption.AllDirectories).ToList();
             }
 
             var resultList = LocalFiles;

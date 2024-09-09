@@ -25,17 +25,33 @@
             BorderBrush="Transparent"
             BorderThickness="0"
             ClipToBounds="True"
-            CornerRadius="15"
+            CornerRadius="{Binding DisplaySetting.BackgroundCornerRadius}"
             Opacity="{Binding ModelInstance.DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}"
             SnapsToDevicePixels="True" />
 
+        <!--<ww:WebView2
+            x:Name="WebViewInstance"
+            Width="{Binding ElementName=pageRoot, Path=ActualWidth}"
+            Height="{Binding ElementName=pageRoot, Path=ActualHeight}"
+            Focusable="True"
+            RenderOptions.BitmapScalingMode="HighQuality"
+            RenderOptions.ClearTypeHint="Auto"
+            RenderOptions.EdgeMode="Aliased"
+            SnapsToDevicePixels="True"
+            Source="https://www.google.com"
+            UseLayoutRounding="True">
+        -->
+        <!--<ww:WebView2.OpacityMask>
+                <VisualBrush Visual="{Binding ElementName=CurWebBorder, Mode=OneTime}" />
+            </ww:WebView2.OpacityMask>-->
+        <!--
+        </ww:WebView2>-->
 
         <cef:ChromiumWebBrowser
             x:Name="BrowserInstance"
             Width="{Binding ElementName=pageRoot, Path=ActualWidth}"
             Height="{Binding ElementName=pageRoot, Path=ActualHeight}"
-            Address="{Binding BackgroundImageRequest.SelectedRequestInstance.RequestUrl,
-            Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Address="{Binding BackgroundImageRequest.SelectedRequestInstance.RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
             Focusable="True"
             RenderOptions.BitmapScalingMode="HighQuality"
             RenderOptions.ClearTypeHint="Auto"

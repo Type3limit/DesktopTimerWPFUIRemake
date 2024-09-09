@@ -79,6 +79,7 @@ namespace DesktopTimer.Models
         {
             BackgroundImageRequest?.Initialize();
             DisplaySetting?.Initilize();
+            //config initlizing at last position
             Config?.Initialize();
             StartTimer();
         }

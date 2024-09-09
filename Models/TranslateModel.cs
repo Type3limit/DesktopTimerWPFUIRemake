@@ -16,6 +16,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using DesktopTimer.Models;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace DesktopTimer.Views.Models
 {
@@ -79,26 +80,6 @@ namespace DesktopTimer.Views.Models
 
         #region Baidu
 
-        private string baiduTranslateUrl = "https://fanyi-api.baidu.com/api/trans/vip/translate";
-        public string BaiduTranslateUrl
-        {
-            get => baiduTranslateUrl;
-            set => SetProperty(ref baiduTranslateUrl, value);
-        }
-
-        private string baiduAppId = "20221223001506041";
-        public string BaiduAppId
-        {
-            get => baiduAppId;
-            set => SetProperty(ref baiduAppId, value);
-        }
-
-        private string baiduSecretKey = "95Aus8uyjisHA750dWA8";
-        public string BaiduSecretKey
-        {
-            get => baiduSecretKey;
-            set => SetProperty(ref baiduSecretKey, value);
-        }
         /// <summary>
         /// baidu translate
         /// </summary>
@@ -110,7 +91,10 @@ namespace DesktopTimer.Views.Models
             {
                 if (true == src?.IsNullOrEmpty())
                     return null;
-                var url = BaiduTranslateUrl;
+                var appId = mainModelInstance.Config.TranslateConfigData.BaiduAppId;
+                var securety = mainModelInstance.Config.TranslateConfigData.BaiduSecretKey;
+                var url = mainModelInstance.Config.TranslateConfigData.BaiduTranslateUrl;
+
                 url += "?q=" + HttpUtility.UrlEncode(src);
                 var from = "en";
                 var to = "zh";
@@ -121,10 +105,10 @@ namespace DesktopTimer.Views.Models
                 }
                 Random random = new Random();
                 string salt = random.Next(100000).ToString();
-                string sign = EncryptString(BaiduAppId + src + salt + BaiduSecretKey);
+                string sign = EncryptString(appId + src + salt + securety);
                 url += "&from=" + from;
                 url += "&to=" + to;
-                url += "&appid=" + BaiduAppId;
+                url += "&appid=" + appId;
                 url += "&salt=" + salt;
                 url += "&sign=" + sign;
                 if (canceller == null)
@@ -186,36 +170,20 @@ namespace DesktopTimer.Views.Models
 
         #region YouDao
 
-        string youdaoTranslateUrl = "https://openapi.youdao.com/api";
-        public string YoudaoTranslateUrl
-        {
-            get => youdaoTranslateUrl;
-            set => SetProperty(ref youdaoTranslateUrl, value);
-        }
-
-        string youdaoAppId = "4b25e4343d86be13";
-        public string YoudaoAppId
-        {
-            get => youdaoAppId;
-            set => SetProperty(ref youdaoAppId, value);
-        }
-        string youDaoSecretKey = "algtmSFeAIkxOVcSZRxXFsQVrU3sLHf0";
-        public string YouDaoSecretKey
-        {
-            get => youDaoSecretKey;
-            set => SetProperty(ref youDaoSecretKey, value);
-        }
         public async Task<string?> YouDaoTranslate(string? src, CancellationTokenSource? canceller)
         {
             try
             {
                 if (true == src?.IsNullOrEmpty())
                     return null;
+                var appId = mainModelInstance.Config.TranslateConfigData.YoudaoAppId;
+                var securety = mainModelInstance.Config.TranslateConfigData.YouDaoSecretKey;
+                var url = mainModelInstance.Config.TranslateConfigData.YoudaoTranslateUrl;
+
                 var dic = new Dictionary<string, string>();
-                string url = "https://openapi.youdao.com/api";
                 string? q = src;
-                string appKey = YoudaoAppId;
-                string appSecret = YouDaoSecretKey;
+                string appKey = appId;
+                string appSecret = securety;
                 string salt = DateTime.Now.Millisecond.ToString();
                 var from = "en";
                 var to = "zh-CHS";
@@ -294,20 +262,12 @@ namespace DesktopTimer.Views.Models
         public TranslateModel(MainWorkModel modelInstance)
         {
             mainModelInstance = modelInstance;
-            ReadConfig();
+           
         }
 
         #endregion
 
         #region command
-        ICommand? saveTanslateConfigCommand = null;
-        public ICommand SaveTranslateConfigCommand
-        {
-            get => saveTanslateConfigCommand ?? (saveTanslateConfigCommand = new RelayCommand(() =>
-            {
-                WriteConfig();
-            }));
-        }
 
         CancellationTokenSource? translatedCanceller = null;
         ICommand? runTranslateCommand = null;
@@ -318,48 +278,13 @@ namespace DesktopTimer.Views.Models
                 if (string.IsNullOrEmpty(str) || CurTranslateObject == str)
                     return;
 
+                InitializeTranslation();
 
-                await Task.Run(() =>
-                {
-                    if (translatedCanceller == null)
-                    {
-                        translatedCanceller = new CancellationTokenSource();
-                    }
-                    try
-                    {
-                        lock (BaiduRequestedWords)
-                        {
-                            BaiduRequestedWords?.Clear();
-                        }
-                        lock (YouDaoRequestedWords)
-                        {
-                            YouDaoRequestedWords?.Clear();
-                        }
+                BaiduRequestedWords.Add(str);
+                YouDaoRequestedWords.Add(str);
+                CurTranslateObject = str;
 
-                        ShouldOpenTranslateResult = false;
-                        SelectedTranslateResult = null;
-                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            TranslateResult?.Clear();
-                        });
-                        if (true == str?.IsNullOrEmpty())
-                        {
-                            return;
-                        }
-                        if (CurTranslateObject == str)//same,ignore
-                            return;
-                        BaiduRequestedWords?.Add(str);
-                        YouDaoRequestedWords?.Add(str);
-                        CurTranslateObject = str;
-
-                        StartYouDaoTranslate();
-                        StartBaiduTranslate();
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.WriteLine(ex);
-                    }
-                });
+                StartTranslationProcesses();
 
 
             }));
@@ -368,7 +293,24 @@ namespace DesktopTimer.Views.Models
 
         #endregion
 
+
         #region methods
+
+        private void InitializeTranslation()
+        {
+            translatedCanceller = new CancellationTokenSource();
+            BaiduRequestedWords.Clear();
+            YouDaoRequestedWords.Clear();
+            ShouldOpenTranslateResult = false;
+            SelectedTranslateResult = null;
+            System.Windows.Application.Current.Dispatcher.Invoke(() => TranslateResult.Clear());
+        }
+
+        private void StartTranslationProcesses()
+        {
+            Task.Run(() => StartYouDaoTranslate());
+            Task.Run(() => StartBaiduTranslate());
+        }
 
         List<string?> BaiduRequestedWords = new List<string?>();
         bool IsBaiduTranslateStarted = false;
@@ -480,48 +422,14 @@ namespace DesktopTimer.Views.Models
         }
 
 
-        void WriteConfig()
-        {
-            var Config = new TranslateConfig()
-            {
-                BaiduAppId = BaiduAppId,
-                BaiduSecretKey = BaiduSecretKey,
-                BaiduTranslateUrl = BaiduTranslateUrl,
-                YoudaoAppId = YoudaoAppId,
-                YouDaoSecretKey = YouDaoSecretKey,
-                YoudaoTranslateUrl = YoudaoTranslateUrl
-            };
 
-            FileMapper.TranslateConfigFile.WriteText(JsonSerializer.Serialize(Config));
-        }
-
-        void ReadConfig()
+        public void CancelAll()
         {
-            var str = FileMapper.TranslateConfigFile.ReadText();
-            if(!str.IsNullOrEmpty())
-            {
-                var target = JsonSerializer.Deserialize<TranslateConfig>(str);
-                if(target!=null)
-                {
-                    BaiduAppId = target.BaiduAppId;
-                    BaiduSecretKey = target.BaiduSecretKey;
-                    BaiduTranslateUrl = target.BaiduTranslateUrl;
-                    YoudaoAppId = target.YoudaoAppId;
-                    YouDaoSecretKey = target.YouDaoSecretKey;
-                    YoudaoTranslateUrl = target.YoudaoTranslateUrl;
-                }
-            }
+            translatedCanceller?.Cancel();
         }
         #endregion
     }
 
-    public class TranslateConfig
-    {
-        public string BaiduAppId { get; set; } = "";
-        public string BaiduSecretKey { get; set; }="";
-        public string BaiduTranslateUrl { get; set; }="";
-        public string YoudaoAppId { get; set; }="";
-        public string YouDaoSecretKey { get; set; }="";
-        public string YoudaoTranslateUrl { get; set; }="";
-    }
+
 }
+   

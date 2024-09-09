@@ -202,9 +202,9 @@ namespace DesktopTimer.Helpers
         /// <param name="content"></param>
         public static void WriteText(this string Path, string content)
         {
-            using (var Stream = File.Open(Path, FileMode.OpenOrCreate))
+            using (var Stream = File.Open(Path, FileMode.OpenOrCreate, FileAccess.Write))
             {
-                Stream.Flush();
+                Stream.SetLength(0);
                 var curBytes = Encoding.UTF8.GetBytes(content);
                 Stream.Write(curBytes, 0, curBytes.Length);
             }
@@ -1385,4 +1385,29 @@ namespace DesktopTimer.Helpers
 
     }
 
+    /// <summary>
+    /// 正则枚举文件
+    /// </summary>
+    public static class RegexDirectoryEnumrator
+    {   // Regex version
+        public static IEnumerable<string> GetFiles(string path,
+                            string searchPatternExpression = "",
+                            SearchOption searchOption = SearchOption.TopDirectoryOnly)
+        {
+            Regex reSearchPattern = new Regex(searchPatternExpression, RegexOptions.IgnoreCase);
+            return Directory.EnumerateFiles(path, "*", searchOption)
+                            .Where(file =>
+                                     reSearchPattern.IsMatch(Path.GetExtension(file)));
+        }
+
+        // Takes same patterns, and executes in parallel
+        public static IEnumerable<string> GetFiles(string path,
+                            string[] searchPatterns,
+                            SearchOption searchOption = SearchOption.TopDirectoryOnly)
+        {
+            return searchPatterns.AsParallel()
+                   .SelectMany(searchPattern =>
+                          Directory.EnumerateFiles(path, searchPattern, searchOption));
+        }
+    }
 }

@@ -23,6 +23,34 @@ namespace DesktopTimer.Helpers
         }
     }
 
+    public class ColorJsonConverter : JsonConverter<Color>
+    {
+        public override Color Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            string? colorName = reader.GetString();
+            return (Color) ColorConverter.ConvertFromString(colorName);
+        }
+
+        public override void Write(Utf8JsonWriter writer, Color value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString());
+        }
+    }
+
+    public class TimeSpanJsonConverter : JsonConverter<TimeSpan>
+    {
+        public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var timeSpanValue = reader.GetDouble();
+            return TimeSpan.FromMilliseconds(timeSpanValue);
+        }
+
+        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
+        {
+            writer.WriteNumberValue(value.TotalMilliseconds);
+        }
+    }
+
     public class FontFamilyJsonConverter : JsonConverter<FontFamily>
     {
         public override FontFamily? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

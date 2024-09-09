@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
@@ -42,12 +43,11 @@ namespace DesktopTimer
         void InitSubProcess()
         {
             RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
-
-            Unosquare.FFME.Library.FFmpegDirectory = @".\Assets";
-
             string strMenu = AppDomain.CurrentDomain.BaseDirectory;
+            Unosquare.FFME.Library.FFmpegDirectory = strMenu+@"Assets";
+
             //pepflashplayerDLL 地址
-            string flashPath = strMenu + @"\Assets\pepflashplayer64_34_0_0_211.dll";
+            string flashPath = strMenu + @"Assets\pepflashplayer64_34_0_0_211.dll";
 
             DeleteCefBrowserCache();
             var setting = new CefSettings();
@@ -94,6 +94,8 @@ namespace DesktopTimer
                 InitSubProcess();
 
                 AddTraceListener();
+
+                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
                 base.OnStartup(e);
 

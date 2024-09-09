@@ -102,7 +102,8 @@ namespace DesktopTimer.Helpers
     public enum ConfigType
     {
         User,
-        Program
+        Program,
+        Translate,
     }
 
     /// <summary>
@@ -125,11 +126,11 @@ namespace DesktopTimer.Helpers
         StepForward,
         Flush
     }
-    public class WebBrowserOperationMessage:TypedMessage<BrowserOperation>
+    public class WebBrowserOperationMessage:TypedMessage<(BrowserOperation,string?)>
     {
-        public WebBrowserOperationMessage(BrowserOperation var)
+        public WebBrowserOperationMessage(BrowserOperation var,string? url)
         {
-            Value = var;
+            Value = (var, url);
         }
     }
 
@@ -139,5 +140,61 @@ namespace DesktopTimer.Helpers
         {
             Value = curTheme;
         }
+    }
+
+    public class VideoPathChangedMessage:TypedMessage<string?>
+    {
+        public VideoPathChangedMessage(string? VideoPath)
+        {
+            Value = VideoPath;
+        }
+    }
+    public class VideoSeekMessage : TypedMessage<TimeSpan>
+    {
+        public VideoSeekMessage(TimeSpan curPosition)
+        {
+            Value = curPosition;
+        }
+    }
+
+    public enum VideoStatus
+    {
+        Stop,
+        Play,
+        Pause,
+    }
+    public class VideoStatusChangedMessage:TypedMessage<VideoStatus>
+    {
+        public VideoStatusChangedMessage(VideoStatus cur)
+        {
+            Value = cur;
+        }
+    }
+
+    public class VideoVolumeChangedMessage : TypedMessage<double>
+    {
+        public VideoVolumeChangedMessage(double VolumeLevel)
+        {
+            Value = VolumeLevel;
+        }
+    }
+
+    public enum VolumeShortOption
+    {
+        Mute,
+        Increase,
+        Decrease
+    }
+
+    public class VideoVolumeShortCutMessage : TypedMessage<VolumeShortOption>
+    {
+        public VideoVolumeShortCutMessage(VolumeShortOption opt)
+        {
+            Value = opt;
+        }
+    }
+
+    public class VideoMoveNextMessage:TypedMessage<object>
+    {
     }
 }

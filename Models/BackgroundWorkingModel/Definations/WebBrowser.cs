@@ -40,7 +40,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                     _=>BrowserOperation.Invalid,
                 };
 
-                WeakReferenceMessenger.Default.Send(new WebBrowserOperationMessage(operation));
+                WeakReferenceMessenger.Default.Send(new WebBrowserOperationMessage(operation,RequestUrl));
             });
         }
 

@@ -14,6 +14,7 @@ using CommunityToolkit.Mvvm.Input;
 using DesktopTimer.models;
 using DesktopTimer.Views.Controls;
 using System.Windows.Media;
+using DesktopTimer.Models.BackgroundWorkingModel.Definations;
 
 namespace DesktopTimer.Models
 {
@@ -28,14 +29,26 @@ namespace DesktopTimer.Models
         [ObservableProperty]
         ProgramSetting programConfigData = new ProgramSetting();
 
+        [ObservableProperty]
+        TranslateConfig translateConfigData = new TranslateConfig();
         #endregion
 
 
         #region constructor
         MainWorkModel? mainWorkModelInstance = null;
-
+        JsonSerializerOptions opt;
         public LocalConfig(MainWorkModel modelInstance)
         {
+            opt = new JsonSerializerOptions()
+            {
+                Converters = 
+                { 
+                    new TypeJsonConverter(), 
+                    new ColorJsonConverter(),
+                    new TimeSpanJsonConverter()
+                }
+            };
+
             mainWorkModelInstance = modelInstance;
             WeakReferenceMessenger.Default.Register<RequestSaveConfigMessage>(this, (e, t) =>
             {
@@ -44,6 +57,7 @@ namespace DesktopTimer.Models
                 {
                     ConfigType.User => (Action?)WriteUserSetting,
                     ConfigType.Program => (Action?)WriteProgramSetting,
+                    ConfigType.Translate => (Action?)WriteTranslateConfig,
                     _ => null
                 })?.Invoke();
             });
@@ -64,6 +78,9 @@ namespace DesktopTimer.Models
             //read user config
             ReadUserSetting();
 
+            //read translate config
+            ReadTranslateConfig();
+
             WeakReferenceMessenger.Default.Send(new ConfigReadComplecateMessage());
         }
 
@@ -71,11 +88,11 @@ namespace DesktopTimer.Models
         {
             try
             {
-                  
+
                 var str = FileMapper.ProgramSettingFile.ReadText();
                 if (!str.IsNullOrEmpty())
                 {
-                    var curData = JsonSerializer.Deserialize<ProgramSetting>(str);
+                    var curData = JsonSerializer.Deserialize<ProgramSetting>(str, opt);
                     if (curData != null)
                     {
                         ProgramConfigData = curData;
@@ -94,7 +111,7 @@ namespace DesktopTimer.Models
                     }
                     WriteProgramSetting();
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -105,13 +122,16 @@ namespace DesktopTimer.Models
 
         public void ReadTimerBackgroundSetting()
         {
-            if(mainWorkModelInstance==null)
+            if (mainWorkModelInstance == null)
                 return;
+            mainWorkModelInstance.DisplaySetting.IsTopMost = ProgramConfigData.TimerSetting.IsTopmost;
+            mainWorkModelInstance.DisplaySetting.TotalCountDown = ProgramConfigData.TimerSetting.FlushTime;
+            mainWorkModelInstance.DisplaySetting.MaxCacheCount = ProgramConfigData.TimerSetting.MaxCacheCount;
             mainWorkModelInstance.DisplaySetting.TimerBackgroundWidth = ProgramConfigData.TimerSetting.Width;
             mainWorkModelInstance.DisplaySetting.TimerBackgroundHeight = ProgramConfigData.TimerSetting.Height;
             mainWorkModelInstance.DisplaySetting.TimerBackgroundOpacity = ProgramConfigData.TimerSetting.BackgroundOpacity;
             mainWorkModelInstance.DisplaySetting.IsTimerBorderVisiable = ProgramConfigData.TimerSetting.IsTimerBackgroundVisiable;
-            mainWorkModelInstance.DisplaySetting.SelectedFontFamily= mainWorkModelInstance.DisplaySetting.FontFamilies[ProgramConfigData.TimerSetting.TimeFontIndex];
+            mainWorkModelInstance.DisplaySetting.SelectedFontFamily = mainWorkModelInstance.DisplaySetting.FontFamilies[ProgramConfigData.TimerSetting.TimeFontIndex];
             mainWorkModelInstance.DisplaySetting.SelectedWeekendFontFamily = mainWorkModelInstance.DisplaySetting.FontFamilies[ProgramConfigData.TimerSetting.WeekendFontIndex];
             mainWorkModelInstance.DisplaySetting.TimeCenterFontSize = ProgramConfigData.TimerSetting.TimeFontSize;
             mainWorkModelInstance.DisplaySetting.WeekendCenterFontSize = ProgramConfigData.TimerSetting.WeekendFontSize;
@@ -122,8 +142,11 @@ namespace DesktopTimer.Models
 
         public void WriteTimerBackgroundSetting()
         {
-            if(mainWorkModelInstance==null)
+            if (mainWorkModelInstance == null)
                 return;
+            ProgramConfigData.TimerSetting.IsTopmost = mainWorkModelInstance.DisplaySetting.IsTopMost;
+            ProgramConfigData.TimerSetting.MaxCacheCount = mainWorkModelInstance.DisplaySetting.MaxCacheCount;
+            ProgramConfigData.TimerSetting.FlushTime = mainWorkModelInstance.DisplaySetting.TotalCountDown;
             ProgramConfigData.TimerSetting.Width = mainWorkModelInstance.DisplaySetting.TimerBackgroundWidth;
             ProgramConfigData.TimerSetting.Height = mainWorkModelInstance.DisplaySetting.TimerBackgroundHeight;
             ProgramConfigData.TimerSetting.BackgroundOpacity = mainWorkModelInstance.DisplaySetting.TimerBackgroundOpacity;
@@ -144,7 +167,7 @@ namespace DesktopTimer.Models
             try
             {
                 WriteTimerBackgroundSetting();
-                var str = JsonSerializer.Serialize(ProgramConfigData);
+                var str = JsonSerializer.Serialize(ProgramConfigData, opt);
                 lock (programSettingLock)
                 {
                     FileMapper.ProgramSettingFile.WriteText(str);
@@ -161,10 +184,11 @@ namespace DesktopTimer.Models
         {
             try
             {
+
                 var str = FileMapper.UserConfigureFile.ReadText();
                 if (!str.IsNullOrEmpty())
                 {
-                    var curData = JsonSerializer.Deserialize<UserSetting>(str);
+                    var curData = JsonSerializer.Deserialize<UserSetting>(str, opt);
                     if (curData != null)
                     {
                         UserConfigData = curData;
@@ -186,7 +210,8 @@ namespace DesktopTimer.Models
         {
             try
             {
-                var str = JsonSerializer.Serialize(UserConfigData);
+
+                var str = JsonSerializer.Serialize(UserConfigData, opt);
                 lock (userSettingLocker)
                 {
                     FileMapper.UserConfigureFile.WriteText(str);
@@ -197,6 +222,41 @@ namespace DesktopTimer.Models
                 Trace.WriteLine(ex);
             }
 
+        }
+
+
+
+        void WriteTranslateConfig()
+        {
+            var Config = new TranslateConfig()
+            {
+                BaiduAppId = TranslateConfigData.BaiduAppId,
+                BaiduSecretKey = TranslateConfigData.BaiduSecretKey,
+                BaiduTranslateUrl = TranslateConfigData.BaiduTranslateUrl,
+                YoudaoAppId = TranslateConfigData.YoudaoAppId,
+                YouDaoSecretKey = TranslateConfigData.YouDaoSecretKey,
+                YoudaoTranslateUrl = TranslateConfigData.YoudaoTranslateUrl
+            };
+
+            FileMapper.TranslateConfigFile.WriteText(JsonSerializer.Serialize(Config));
+        }
+
+        void ReadTranslateConfig()
+        {
+            var str = FileMapper.TranslateConfigFile.ReadText();
+            if (!str.IsNullOrEmpty())
+            {
+                var target = JsonSerializer.Deserialize<TranslateConfig>(str);
+                if (target != null)
+                {
+                    TranslateConfigData.BaiduAppId = target.BaiduAppId;
+                    TranslateConfigData.BaiduSecretKey = target.BaiduSecretKey;
+                    TranslateConfigData.BaiduTranslateUrl = target.BaiduTranslateUrl;
+                    TranslateConfigData.YoudaoAppId = target.YoudaoAppId;
+                    TranslateConfigData.YouDaoSecretKey= target.YouDaoSecretKey;
+                    TranslateConfigData.YoudaoTranslateUrl = target.YoudaoTranslateUrl;
+                }
+            }
         }
         #endregion
 
@@ -213,6 +273,22 @@ namespace DesktopTimer.Models
             }));
         }
 
+        ICommand? saveTanslateConfigCommand = null;
+        public ICommand SaveTranslateConfigCommand
+        {
+            get => saveTanslateConfigCommand ?? (saveTanslateConfigCommand = new RelayCommand(() =>
+            {
+                WriteTranslateConfig();
+            }));
+        }
+        ICommand? resetTanslateConfigCommand = null;
+        public ICommand ResetTranslateConfigCommand
+        {
+            get => resetTanslateConfigCommand ?? (resetTanslateConfigCommand = new RelayCommand(() =>
+            {
+                TranslateConfigData = new TranslateConfig();
+            }));
+        }
 
         ICommand? saveUserConfigCommand = null;
 
@@ -228,13 +304,23 @@ namespace DesktopTimer.Models
 
     public class UserSetting : ObservableObject
     {
+        public string? LocalPictureLoadPath { set; get; }
+        public string? LocalVideoLoadPath { set; get; }
+        public string? LastPlayedVideo { set;get;}
+        public TimeSpan? LastVideoPosition { set;get;}
+        public string? LastOpenedWebUrl { set;get;}
+        public Type? LastRequestBaseType { set; get; } = null;
     }
 
     public class ProgramSetting : ObservableObject
     {
 
-
-        public string? LocalCollectPath { set; get; }
+        private string? localCollectPath = "";
+        public string? LocalCollectPath
+        {
+            get => localCollectPath;
+            set => SetProperty(ref localCollectPath, value);
+        }
 
         [JsonIgnore]
         BackgroundSetting timerSetting = new BackgroundSetting();
@@ -243,8 +329,8 @@ namespace DesktopTimer.Models
         /// </summary>
         public BackgroundSetting TimerSetting
         {
-            get=>timerSetting; 
-            set => SetProperty(ref timerSetting,value);
+            get => timerSetting;
+            set => SetProperty(ref timerSetting, value);
         }
 
         [JsonIgnore]
@@ -265,22 +351,22 @@ namespace DesktopTimer.Models
         /// </summary>
         public AudioWaveSetting AudioWaveSetting
         {
-            get=>audioWaveSetting;
-            set=>SetProperty(ref audioWaveSetting,value);
+            get => audioWaveSetting;
+            set => SetProperty(ref audioWaveSetting, value);
         }
 
     }
 
-    public class BackgroundSetting:ObservableObject
+    public class BackgroundSetting : ObservableObject
     {
 
-        public bool IsTimerBackgroundVisiable { set;get;} = true;
+        public bool IsTimerBackgroundVisiable { set; get; } = true;
 
         public double Width { set; get; } = 0.25;
 
-        public double Height { set; get; }=0.15;
+        public double Height { set; get; } = 0.15;
 
-        public double BackgroundOpacity { set; get; }=1;
+        public double BackgroundOpacity { set; get; } = 1;
 
         public long MaxCacheCount { set; get; } = 20;
 
@@ -296,7 +382,7 @@ namespace DesktopTimer.Models
 
         public int WeekendFontSize { set; get; } = 12;
 
-        public int BackgroundRaidus { set;get;} = 5;
+        public int BackgroundRaidus { set; get; } = 5;
 
         public string? TimeFontColor { set; get; }
 
@@ -309,7 +395,7 @@ namespace DesktopTimer.Models
     {
         [JsonIgnore]
         bool enableParticleBackground = true;
-      
+
         public bool EnableParticleBackground
         {
             get => enableParticleBackground;
@@ -409,13 +495,12 @@ namespace DesktopTimer.Models
 
         public double CornerRadius
         {
-            get=>cornerRadius;
-            set=>SetProperty(ref cornerRadius,value);
+            get => cornerRadius;
+            set => SetProperty(ref cornerRadius, value);
         }
     }
 
-
-    public class AudioWaveSetting :ObservableObject
+    public class AudioWaveSetting : ObservableObject
     {
 
         [JsonIgnore]
@@ -423,17 +508,17 @@ namespace DesktopTimer.Models
 
         public bool EnableAudioWave
         {
-            get=>enableAudioWave;
-            set=>SetProperty(ref enableAudioWave,value);
+            get => enableAudioWave;
+            set => SetProperty(ref enableAudioWave, value);
         }
 
         [JsonIgnore]
-        List<AudioWaveControl.ApperenceType> apperenceTypes =  
+        List<AudioWaveControl.ApperenceType> apperenceTypes =
             Enum.GetValues(typeof(AudioWaveControl.ApperenceType)).Cast<AudioWaveControl.ApperenceType>().ToList();
         [JsonIgnore]
         public List<AudioWaveControl.ApperenceType> ApperenceTypes
         {
-            get=>apperenceTypes;
+            get => apperenceTypes;
 
         }
 
@@ -443,8 +528,8 @@ namespace DesktopTimer.Models
 
         public AudioWaveControl.ApperenceType ApperenceType
         {
-            get=>apperenceType;
-            set=>SetProperty(ref apperenceType,value);
+            get => apperenceType;
+            set => SetProperty(ref apperenceType, value);
         }
 
         [JsonIgnore]
@@ -452,8 +537,8 @@ namespace DesktopTimer.Models
 
         public int UnitCount
         {
-            get=>unitCount;
-            set=>SetProperty(ref unitCount,value);
+            get => unitCount;
+            set => SetProperty(ref unitCount, value);
         }
 
         [JsonIgnore]
@@ -461,17 +546,17 @@ namespace DesktopTimer.Models
 
         public double UnitRadius
         {
-            get=>unitRadius;
-            set=>SetProperty(ref unitRadius,value);
+            get => unitRadius;
+            set => SetProperty(ref unitRadius, value);
         }
 
         [JsonIgnore]
-        double unitStrokeWidth =1.0d;
+        double unitStrokeWidth = 1.0d;
 
         public double UnitStrokeWidth
         {
-            get=>unitStrokeWidth;
-            set=>SetProperty(ref unitStrokeWidth,value);
+            get => unitStrokeWidth;
+            set => SetProperty(ref unitStrokeWidth, value);
         }
 
         [JsonIgnore]
@@ -479,8 +564,8 @@ namespace DesktopTimer.Models
 
         public double UnitOpacity
         {
-            get=>unitOpacity;
-            set=>SetProperty(ref unitOpacity,value);
+            get => unitOpacity;
+            set => SetProperty(ref unitOpacity, value);
         }
 
         [JsonIgnore]
@@ -488,7 +573,7 @@ namespace DesktopTimer.Models
 
         public bool UsingRandomUnitColor
         {
-            get=>usingRandomUnitColor; set => SetProperty(ref usingRandomUnitColor, value);
+            get => usingRandomUnitColor; set => SetProperty(ref usingRandomUnitColor, value);
         }
 
         [JsonIgnore]
@@ -496,8 +581,8 @@ namespace DesktopTimer.Models
 
         public Color SpecificUnitColor
         {
-            get=>specificUnitColor;
-            set=>SetProperty(ref specificUnitColor,value);
+            get => specificUnitColor;
+            set => SetProperty(ref specificUnitColor, value);
         }
 
         [JsonIgnore]
@@ -505,8 +590,8 @@ namespace DesktopTimer.Models
 
         public Color SpecificUnitStrokeColor
         {
-            get=>specificUnitStrokeColor;
-            set=>SetProperty(ref specificUnitStrokeColor,value);
+            get => specificUnitStrokeColor;
+            set => SetProperty(ref specificUnitStrokeColor, value);
         }
 
 
@@ -514,8 +599,8 @@ namespace DesktopTimer.Models
         double dataWeight = 0.5d;
         public double DataWeight
         {
-            get=>dataWeight;
-            set=>SetProperty(ref dataWeight,value);
+            get => dataWeight;
+            set => SetProperty(ref dataWeight, value);
         }
 
 
@@ -524,8 +609,24 @@ namespace DesktopTimer.Models
 
         public double EllipseRadius
         {
-            get=>ellipseRadius;
-            set=>SetProperty(ref ellipseRadius,value);
+            get => ellipseRadius;
+            set => SetProperty(ref ellipseRadius, value);
         }
+    }
+
+    public partial class TranslateConfig : ObservableObject
+    {
+        [ObservableProperty]
+        string baiduAppId = "20221223001506041";
+        [ObservableProperty]
+        string baiduSecretKey = "95Aus8uyjisHA750dWA8";
+        [ObservableProperty]
+        string baiduTranslateUrl = "https://fanyi-api.baidu.com/api/trans/vip/translate";
+        [ObservableProperty]
+        string youdaoAppId = "4b25e4343d86be13";
+        [ObservableProperty]
+        string youDaoSecretKey = "algtmSFeAIkxOVcSZRxXFsQVrU3sLHf0";
+        [ObservableProperty]
+        string youdaoTranslateUrl = "https://openapi.youdao.com/api";
     }
 }

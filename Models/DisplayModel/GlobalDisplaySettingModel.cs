@@ -56,8 +56,13 @@ namespace DesktopTimer.models.displayModel
         private double timerBackgroundOpacity = 1;
         public double TimerBackgroundOpacity
         {
-            get=>timerBackgroundOpacity;
-            set=>SetProperty(ref timerBackgroundOpacity,value);
+            get => timerBackgroundOpacity;
+            set
+            {
+                SetProperty(ref timerBackgroundOpacity, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.BackgroundOpacity = value;
+            }
         }
 
         private double timerBackgroundWidth = 0.35;
@@ -67,7 +72,12 @@ namespace DesktopTimer.models.displayModel
         public double TimerBackgroundWidth
         {
             get => timerBackgroundWidth;
-            set => SetProperty(ref timerBackgroundWidth, value);
+            set
+            {
+                SetProperty(ref timerBackgroundWidth, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.Width = value;
+            }
         }
 
 
@@ -78,7 +88,12 @@ namespace DesktopTimer.models.displayModel
         public double TimerBackgroundHeight
         {
             get => timerBackgroundHeight;
-            set => SetProperty(ref timerBackgroundHeight, value);
+            set
+            {
+                SetProperty(ref timerBackgroundHeight, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.Height = value;
+            }
         }
 
 
@@ -89,7 +104,12 @@ namespace DesktopTimer.models.displayModel
         public bool IsTimerBorderVisiable
         {
             get => isTimerBorderVisiable;
-            set => SetProperty(ref isTimerBorderVisiable, value);
+            set
+            {
+                SetProperty(ref isTimerBorderVisiable, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.IsTimerBackgroundVisiable = value;
+            }
 
         }
 
@@ -100,7 +120,10 @@ namespace DesktopTimer.models.displayModel
         public FontFamily? SelectedFontFamily
         {
             get => selectedFontFamily;
-            set => SetProperty(ref selectedFontFamily, value);
+            set
+            {
+                SetProperty(ref selectedFontFamily, value);
+            }
         }
 
         private FontFamily? selectedWeekendFontFamily = null;
@@ -213,7 +236,7 @@ namespace DesktopTimer.models.displayModel
         private int backgroundCornerRadiusValue = 15;
         public int BackgroundCornerRadiusValue
         {
-            get=>backgroundCornerRadiusValue;
+            get => backgroundCornerRadiusValue;
             set
             {
                 SetProperty(ref backgroundCornerRadiusValue, value);
@@ -223,9 +246,9 @@ namespace DesktopTimer.models.displayModel
 
         public CornerRadius BackgroundCornerRadius
         {
-            get=>
+            get =>
                 new CornerRadius(BackgroundCornerRadiusValue);
-            
+
         }
 
         private double backgroundImageOpacity = 1d;
@@ -235,7 +258,11 @@ namespace DesktopTimer.models.displayModel
         public double BackgroundImageOpacity
         {
             get => backgroundImageOpacity;
-            set => SetProperty(ref backgroundImageOpacity, value);
+            set
+            {
+                SetProperty(ref backgroundImageOpacity, value);
+
+            }
         }
 
         private long curCountDown = 0;
@@ -255,7 +282,11 @@ namespace DesktopTimer.models.displayModel
         public long TotalCountDown
         {
             get => totalCountDown;
-            set => SetProperty(ref totalCountDown, value);
+            set
+            {
+                SetProperty(ref totalCountDown, value);
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.FlushTime = value;
+            }
         }
 
 
@@ -266,7 +297,12 @@ namespace DesktopTimer.models.displayModel
         public long MaxCacheCount
         {
             get => maxCacheCount;
-            set => SetProperty(ref maxCacheCount, value);
+            set
+            {
+                SetProperty(ref maxCacheCount, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.MaxCacheCount = value;
+            }
         }
 
         public string? CurrentBackgroundViewPath = null;
@@ -310,8 +346,13 @@ namespace DesktopTimer.models.displayModel
         /// </summary>
         public bool IsTopMost
         {
-            get=>isTopMost;
-            set=>SetProperty(ref isTopMost,value);
+            get => isTopMost;
+            set
+            {
+                SetProperty(ref isTopMost, value);
+
+                mainModelInstance.Config.ProgramConfigData.TimerSetting.IsTopmost = value;
+            }
         }
         #endregion
 
@@ -413,7 +454,7 @@ namespace DesktopTimer.models.displayModel
         private ICommand? openTranslateCommand = null;
         public ICommand OpenTranslateCommand
         {
-            get=>openTranslateCommand ??(openTranslateCommand = new RelayCommand(() => 
+            get => openTranslateCommand ?? (openTranslateCommand = new RelayCommand(() =>
             {
                 IsTranslateOpen = true;
             }));
@@ -464,13 +505,13 @@ namespace DesktopTimer.models.displayModel
         private ICommand? collectCurrentImageCommand = null;
         public ICommand? CollectCurrentImageCommand
         {
-            get=> collectCurrentImageCommand ?? (collectCurrentImageCommand = new RelayCommand(() => 
+            get => collectCurrentImageCommand ?? (collectCurrentImageCommand = new RelayCommand(() =>
             {
-                if(CurrentBackgroundViewPath==null || mainModelInstance?.Config?.ProgramConfigData?.LocalCollectPath==null)
+                if (CurrentBackgroundViewPath == null || mainModelInstance?.Config?.ProgramConfigData?.LocalCollectPath == null)
                     return;
                 var targetPath = mainModelInstance.Config.ProgramConfigData.
                 LocalCollectPath.PathCombine(CurrentBackgroundViewPath.getName());
-                if(!targetPath.IsFileExist())
+                if (!targetPath.IsFileExist())
                 {
                     File.Copy(CurrentBackgroundViewPath, targetPath);
                 }
@@ -481,7 +522,7 @@ namespace DesktopTimer.models.displayModel
         private ICommand? setTopMostCommand = null;
         public ICommand? SetTopMostCommand
         {
-            get=>setTopMostCommand??(setTopMostCommand =new RelayCommand(() => 
+            get => setTopMostCommand ?? (setTopMostCommand = new RelayCommand(() =>
             {
                 IsTopMost = !IsTopMost;
             }));
@@ -510,7 +551,14 @@ namespace DesktopTimer.models.displayModel
                 }
             });
 
+            WeakReferenceMessenger.Default.Register<RequestModelChangedMessage>(this, (t, message) =>
+            {
+                if (message.Value == Models.BackgroundWorkingModel.Definations.RequestBaseUseage.PictureBackground)
+                {
 
+                    CheckToFillBackgroundCache();
+                }
+            });
             GetAllFont();
             CheckToFillBackgroundCache();
         }

@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
+using DesktopTimer.Models;
 
 namespace DesktopTimer.Views.BackgroundViews
 {
@@ -28,7 +29,7 @@ namespace DesktopTimer.Views.BackgroundViews
 
         private Dictionary<string, CookieVisitor> UrlCookies = new Dictionary<string, CookieVisitor>();
 
-
+        MainWorkModel? mainWorkModel = null;
         public WebViewsPage()
         {
             InitializeComponent();
@@ -41,30 +42,45 @@ namespace DesktopTimer.Views.BackgroundViews
             BrowserInstance.FrameLoadEnd += WebView_FrameLoadEnd;
             Loaded += WebViewsPage_Loaded;
             Unloaded += WebViewsPage_Unloaded;
+            DataContextChanged += WebViewsPage_DataContextChanged;
            
+        }
+
+        private void WebViewsPage_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if(e.NewValue is MainWorkModel model)
+            {
+                mainWorkModel = model;
+            }
         }
 
         void WebViewsPage_Loaded(object sender, RoutedEventArgs e)
         {
             WeakReferenceMessenger.Default.Register<WebBrowserOperationMessage>(this, (e, t) =>
             {
-                switch (t.Value)
+                switch (t.Value.Item1)
                 {
                     case BrowserOperation.Invalid:
                         break;
                     case BrowserOperation.StepBack:
+                        
                         BrowserInstance.Back();
                         break;
                     case BrowserOperation.StepForward:
+                       
                         BrowserInstance.Forward();
                         break;
                     case BrowserOperation.Flush:
+                      
                         BrowserInstance.Load(BrowserInstance.Address);
                         break;
                 }
 
             });
-
+            if(!mainWorkModel.Config.UserConfigData.LastOpenedWebUrl.IsNullOrEmpty())
+            {
+                BrowserInstance.Load(mainWorkModel.Config.UserConfigData.LastOpenedWebUrl);
+            }
         }
 
         void WebViewsPage_Unloaded(object sender, RoutedEventArgs e)
@@ -124,6 +140,9 @@ namespace DesktopTimer.Views.BackgroundViews
                     Trace.WriteLine(ex.ToString());
                 }
             });
+
+            mainWorkModel.Config.UserConfigData.LastOpenedWebUrl = BrowserInstance.GetFocusedFrame().Url;
+            WeakReferenceMessenger.Default.Send(new RequestSaveConfigMessage(ConfigType.User));
         }
 
     }

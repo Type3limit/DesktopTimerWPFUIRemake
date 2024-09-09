@@ -36,7 +36,7 @@ namespace DesktopTimer.Helpers
             {
 #pragma warning disable CS8604 
                 string currentFile = Path.Combine(AppDomain.CurrentDomain?.SetupInformation?.ApplicationBase, "Configuration");
-#pragma warning restore CS8604 。
+#pragma warning restore CS8604 
                 if (!Directory.Exists(currentFile))
                     Directory.CreateDirectory(currentFile);
                 return currentFile;

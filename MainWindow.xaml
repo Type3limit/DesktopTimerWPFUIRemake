@@ -6,6 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:def="clr-namespace:DesktopTimer.Models.BackgroundWorkingModel.Definations"
     xmlns:helper="clr-namespace:DesktopTimer.Helpers"
+    xmlns:ia="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:icon="http://metro.mahapps.com/winfx/xaml/iconpacks"
     xmlns:local="clr-namespace:DesktopTimer"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -37,7 +39,10 @@
     mc:Ignorable="d">
 
     <Window.Resources>
+
         <helper:HalfConverter x:Key="percentConverter" />
+        <helper:TimeSpanToSecondsConverter x:Key="TimeSpanToSecondsConverter" />
+        <helper:TimeSpanFormatter x:Key="timeSpanFormatter" />
     </Window.Resources>
     <Window.DataContext>
 
@@ -55,7 +60,7 @@
                 x:Name="SettingFlyout"
                 Width="{Binding ElementName=mainWindow, Path=ActualWidth}"
                 Height="{Binding ElementName=mainWindow, Path=ActualHeight}"
-                Background="#99000000"
+                Background="#AA000000"
                 BorderThickness="0"
                 IsOpen="{Binding DisplaySetting.IsSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 Placement="Center">
@@ -75,44 +80,216 @@
 
             <ui:Flyout
                 x:Name="ExtraFlyout"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
+                Width="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ui:FluentWindow}, Path=ActualWidth}"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
                 BorderThickness="0"
                 IsOpen="{Binding DisplaySetting.IsExtraSettingOpen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                Placement="Center">
+                Placement="Bottom">
                 <ui:Flyout.Resources>
-                    <DataTemplate DataType="{x:Type def:WebBrowser}">
-                        <StackPanel>
-                            <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <ui:Button
-                                    x:Name="StepBackButton"
-                                    Command="{Binding BrowserOptionCommand}"
-                                    CommandParameter="StepBack"
-                                    Icon="{ui:SymbolIcon Symbol=ArrowLeft48}" />
-                                <ui:Button
-                                    x:Name="StepForwardButton"
-                                    Margin="5,0"
-                                    Command="{Binding BrowserOptionCommand}"
-                                    CommandParameter="StepForward"
-                                    Icon="{ui:SymbolIcon Symbol=ArrowRight48}" />
-                                <ui:TextBlock
-                                    Width="Auto"
-                                    VerticalAlignment="Center"
-                                    Text="网页地址：" />
-                                <ui:TextBox
-                                    Height="35"
-                                    MinWidth="300"
-                                    MaxWidth="500"
-                                    BorderThickness="0"
-                                    Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <ui:Button
-                                    Margin="10,10"
-                                    Command="{Binding BrowserOptionCommand}"
-                                    CommandParameter="Flush"
-                                    Icon="{ui:SymbolIcon Symbol=ArrowCircleRight48}" />
+                    <ResourceDictionary>
+                        <ResourceDictionary.MergedDictionaries>
+                            <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
+                        </ResourceDictionary.MergedDictionaries>
+                        <DataTemplate DataType="{x:Type def:WebBrowser}">
+                            <StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <ui:Button
+                                        x:Name="StepBackButton"
+                                        Command="{Binding BrowserOptionCommand}"
+                                        CommandParameter="StepBack"
+                                        Icon="{ui:SymbolIcon Symbol=ArrowLeft48}" />
+                                    <ui:Button
+                                        x:Name="StepForwardButton"
+                                        Margin="5,0"
+                                        Command="{Binding BrowserOptionCommand}"
+                                        CommandParameter="StepForward"
+                                        Icon="{ui:SymbolIcon Symbol=ArrowRight48}" />
+                                    <ui:TextBlock
+                                        Width="Auto"
+                                        VerticalAlignment="Center"
+                                        Text="网页地址：" />
+                                    <ui:TextBox
+                                        Height="35"
+                                        MinWidth="500"
+                                        MaxWidth="500"
+                                        BorderThickness="0"
+                                        Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ui:Button
+                                        Margin="10,10"
+                                        Command="{Binding BrowserOptionCommand}"
+                                        CommandParameter="Flush"
+                                        Icon="{ui:SymbolIcon Symbol=ArrowCircleRight48}" />
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type def:LocalVideo}">
+                            <StackPanel>
+
+
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock Text="{Binding Position, Converter={StaticResource timeSpanFormatter}}" />
+                                    <Slider
+                                        Name="PositionSlider"
+                                        Grid.Row="0"
+                                        MinWidth="600"
+                                        Margin="10,0"
+                                        HorizontalAlignment="Stretch"
+                                        Cursor="Hand"
+                                        IsEnabled="{Binding MediaElement.IsOpen}"
+                                        IsSnapToTickEnabled="False"
+                                        LargeChange="{Binding PositionStep, Converter={StaticResource TimeSpanToSecondsConverter}}"
+                                        Maximum="{Binding EndPostion, Converter={StaticResource TimeSpanToSecondsConverter}}"
+                                        Minimum="{Binding StartPosition, Converter={StaticResource TimeSpanToSecondsConverter}}"
+                                        PreviewMouseLeftButtonDown="PositionSlider_PreviewMouseLeftButtonDown"
+                                        SmallChange="{Binding PositionStep, Converter={StaticResource TimeSpanToSecondsConverter}}"
+                                        Value="{Binding Position, Converter={StaticResource TimeSpanToSecondsConverter}}">
+                                        <ia:Interaction.Triggers>
+                                            <ia:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                                <ia:InvokeCommandAction Command="{Binding ChangeUpdatePositionStatusCommand}" />
+                                            </ia:EventTrigger>
+                                            <ia:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                                <ia:InvokeCommandAction Command="{Binding SeekCommand}" />
+                                            </ia:EventTrigger>
+                                            <ia:EventTrigger EventName="MouseLeftButtonUp">
+                                                <ia:InvokeCommandAction Command="{Binding ChangeUpdatePositionStatusCommand}" />
+                                            </ia:EventTrigger>
+                                        </ia:Interaction.Triggers>
+                                    </Slider>
+                                    <ui:TextBlock Text="{Binding EndPostion, Converter={StaticResource timeSpanFormatter}}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Margin="0,5"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <ui:Button
+                                        x:Name="PreFrameButton"
+                                        Width="32"
+                                        Height="32"
+                                        Command="{Binding SeekCommand}"
+                                        CommandParameter="0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="{x:Type Button}">
+                                                <Border Background="#00000000">
+                                                    <Path
+                                                        Data="M512 51.2C258.048 51.2 51.2 258.048 51.2 512s206.848 460.8 460.8 460.8 460.8-206.848                                                       460.8-460.8S765.952 51.2 512 51.2z m0 880.64C280.576 931.84 92.16 743.424 92.16 512S280.576                                                      92.16 512 92.16s419.84 188.416 419.84 419.84-188.416 419.84-419.84 419.84z                                                       m185.344-595.968c-11.264-8.192-24.576-10.24-38.912-8.192-7.168 1.024-13.312 4.096-19.456                                                       8.192L442.368 472.064c-11.264 7.168-19.456 18.432-21.504 31.744-3.072 13.312 1.024 28.672                                                       8.192 39.936 3.072 5.12 8.192 10.24 14.336 14.336l196.608 131.072c8.192 5.12 18.432 8.192                                                       27.648 8.192 16.384 0 31.744-7.168 41.984-21.504l1.024-1.024c4.096-6.144 7.168-13.312 7.168-20.48                                                       9.216-43.008 13.312-90.112 13.312-140.288s-5.12-99.328-13.312-146.432c-2.048-12.288-9.216-23.552-20.48-31.744z                                                      m-19.456 312.32v4.096c-3.072 4.096-10.24 6.144-15.36 3.072L465.92 523.264l-3.072-3.072c-2.048-2.048-2.048-5.12-2.048-8.192 0-2.048                                                      1.024-4.096 4.096-6.144l196.608-136.192c2.048-1.024 3.072-2.048 5.12-2.048 3.072-1.024 6.144 1.024 7.168 2.048                                                      1.024 1.024 4.096 3.072 4.096 6.144 8.192 44.032 13.312 90.112 13.312 138.24 0 48.128-4.096 93.184-13.312 134.144z                                                      m-324.608 28.672c2.048 11.264-4.096 21.504-15.36 24.576h-4.096c-9.216 0-17.408-6.144-19.456-16.384-14.336-62.464-20.48-118.784-20.48-167.936 0-63.488                                                       7.168-121.856 21.504-179.2 3.072-11.264 14.336-17.408 24.576-15.36 11.264 3.072 17.408 14.336 15.36 24.576-13.312 53.248-19.456 108.544-19.456 168.96-3.072 47.104 4.096 101.376 17.408 160.768z"
+                                                        Fill="White"
+                                                        Stretch="UniformToFill" />
+                                                </Border>
+                                            </ControlTemplate>
+
+
+                                        </Button.Template>
+                                    </ui:Button>
+                                    <ui:Button
+                                        x:Name="PlayControlButton"
+                                        Width="32"
+                                        Height="32"
+                                        Margin="20,0"
+                                        Command="{Binding PlayCommand}">
+
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="{x:Type Button}">
+                                                <ControlTemplate.Resources>
+                                                    <GeometryGroup x:Key="PlayKey">
+                                                        <PathGeometry Figures="M512.268258 1022.835842c-68.658678 0-135.399619-13.564433-198.369591-40.316509-60.752236-25.809077-115.373446-62.712976-162.346233-109.685763-46.971763-46.971763-83.875662-101.592974-109.685763-162.346233C15.115619 647.517366 1.551186 580.777449 1.551186 512.118771S15.115619 376.719151 41.866671 313.74918c25.810101-60.752236 62.714-115.373446 109.685763-162.346233 46.972787-46.971763 101.593997-83.875662 162.346233-109.685763 62.969971-26.751052 129.710912-40.315485 198.369591-40.315485s135.398595 13.564433 198.368567 40.315485c60.752236 25.810101 115.373446 62.714 162.346233 109.685763 46.971763 46.972787 83.875662 101.593997 109.685763 162.346233 26.752076 62.969971 40.316509 129.710912 40.316509 198.369591s-13.564433 135.398595-40.316509 198.368567c-25.809077 60.75326-62.712976 115.37447-109.685763 162.346233-46.971763 46.972787-101.592974 83.876686-162.346233 109.685763C647.666853 1009.27141 580.925912 1022.835842 512.268258 1022.835842zM512.268258 50.548195c-62.018782 0-122.293887 12.247716-179.152287 36.403219-54.923257 23.333323-104.317532 56.709936-146.810821 99.204249s-75.870926 91.888588-99.204249 146.810821c-24.155503 56.8584-36.403219 117.133505-36.403219 179.152287 0 62.017758 12.247716 122.292863 36.403219 179.152287 23.333323 54.923257 56.709936 104.317532 99.204249 146.811845 42.493289 42.493289 91.888588 75.870926 146.810821 99.204249 56.8584 24.155503 117.133505 36.403219 179.152287 36.403219 62.017758 0 122.292863-12.247716 179.152287-36.403219 54.923257-23.333323 104.317532-56.71096 146.811845-99.204249 42.493289-42.494313 75.870926-91.888588 99.204249-146.811845 24.155503-56.8584 36.403219-117.133505 36.403219-179.152287s-12.247716-122.293887-36.403219-179.152287c-23.334347-54.923257-56.71096-104.317532-99.205273-146.810821-42.493289-42.493289-91.887565-75.870926-146.810821-99.204249C634.561121 62.795911 574.286016 50.548195 512.268258 50.548195z" />
+                                                        <PathGeometry Figures="M425.042443 780.041915c-4.373014 0-8.775721-0.898971-12.922457-2.741965-11.492089-5.10714-18.918329-16.5337-18.918329-29.110084L393.201657 285.216568c0-12.522118 7.381189-23.929224 18.804678-29.059913 11.424512-5.130689 24.853792-3.069608 34.214152 5.248436l233.877934 207.8907c12.998224 11.554546 20.492041 28.154799 20.558593 45.545491s-7.299278 34.048283-20.207401 45.701121L446.404787 771.835474C440.438607 777.222135 432.787112 780.041915 425.042443 780.041915zM442.349177 323.719775l0 385.566545L647.51839 524.063417c3.492473-3.153567 4.001344-7.012591 3.993153-9.032716s-0.545731-5.875054-4.063801-9.002L442.349177 323.719775z" />
+                                                    </GeometryGroup>
+                                                    <GeometryGroup x:Key="PauseKey">
+                                                        <PathGeometry Figures="M515.2 36C251.6 36 36.8 250.8 36.8 514.4s214.8 478.4 478.4 478.4 478.4-214.8 478.4-478.4S778.8 36 515.2 36L515.2 36zM515.2 932.8c-231.2 0-418.4-188-418.4-418.4C96.8 283.6 284.8 96 515.2 96c231.2 0 418.4 188 418.4 418.4C933.6 745.6 746 932.8 515.2 932.8L515.2 932.8z" />
+                                                        <PathGeometry Figures="M419.2 290.4c-21.2 0-38.8 17.6-38.8 38.8L380.4 700c0 21.2 17.6 38.8 38.8 38.8s38.8-17.2 38.8-38.8L458 329.2C458 308 440.4 290.4 419.2 290.4z" />
+                                                        <PathGeometry Figures="M611.2 290.4c-21.2 0-38.8 17.6-38.8 38.8L572.4 700c0 21.2 17.6 38.8 38.8 38.8s38.8-17.2 38.8-38.8L650 329.2C650 308 632.4 290.4 611.2 290.4z" />
+                                                    </GeometryGroup>
+                                                </ControlTemplate.Resources>
+                                                <Border Background="#00000000">
+                                                    <Path
+                                                        x:Name="PlayPath"
+                                                        Data="{StaticResource PlayKey}"
+                                                        Fill="White"
+                                                        Stretch="UniformToFill" />
+                                                </Border>
+
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter TargetName="PlayPath" Property="Data" Value="{StaticResource PauseKey}" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+
+                                        </Button.Template>
+                                    </ui:Button>
+                                    <ui:Button
+                                        x:Name="NextFrameButton"
+                                        Width="32"
+                                        Height="32"
+                                        Command="{Binding SeekCommand}"
+                                        CommandParameter="1">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="{x:Type Button}">
+                                                <Border Background="#00000000">
+                                                    <Path
+                                                        Data="M512 51.2C258.048 51.2 51.2 258.048 51.2 512s206.848 460.8 460.8 460.8                                                        460.8-206.848 460.8-460.8S765.952 51.2 512 51.2z m0 880.64C280.576 931.84 92.16                                                        743.424 92.16 512S280.576 92.16 512 92.16s419.84 188.416 419.84 419.84-188.416                                                        419.84-419.84 419.84z m69.632-458.752L385.024                                                        335.872c-6.144-4.096-12.288-7.168-19.456-8.192-27.648-5.12-54.272 13.312-59.392 40.96-9.216                                                       46.08-13.312 95.232-13.312 146.432 0 49.152 4.096 96.256 13.312 140.288 1.024 7.168 3.072 13.312                                                       7.168 20.48l1.024 1.024c10.24 13.312 26.624 21.504 41.984 21.504 9.216 0 19.456-3.072                                                        28.672-8.192l196.608-131.072c5.12-3.072 10.24-8.192 13.312-13.312 8.192-11.264 11.264-26.624                                                       9.216-39.936-4.096-14.336-11.264-26.624-22.528-32.768z m-21.504 48.128l-2.048 2.048-196.608 131.072c-5.12                                                       3.072-11.264 1.024-15.36-3.072v-1.024-3.072c-8.192-40.96-13.312-86.016-13.312-133.12 0-48.128 4.096-94.208                                                        13.312-138.24 1.024-5.12 7.168-9.216 11.264-8.192 2.048 0 3.072 1.024 5.12 2.048l197.632 136.192c2.048 2.048                                                        3.072 4.096 4.096 5.12-1.024 4.096-1.024 7.168-4.096 10.24zM710.656 337.92c14.336 56.32 21.504 115.712 21.504                                                       179.2 0 49.152-7.168 106.496-20.48 167.936-2.048 9.216-10.24 16.384-19.456 16.384h-4.096c-11.264-2.048-18.432-13.312-15.36-24.576 13.312-59.392 20.48-112.64 20.48-159.744                                                       0-60.416-6.144-115.712-19.456-168.96-3.072-11.264 4.096-22.528 15.36-24.576 8.192-3.072 19.456 3.072 21.504 14.336z"
+                                                        Fill="White"
+                                                        Stretch="UniformToFill" />
+                                                </Border>
+
+                                            </ControlTemplate>
+
+                                        </Button.Template>
+                                    </ui:Button>
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <ui:TextBlock VerticalAlignment="Center" Text="本地视频路径：" />
+                                    <ui:TextBox
+                                        MinWidth="150"
+                                        Margin="0,0,10,0"
+                                        BorderThickness="0"
+                                        Text="{Binding LocalFileLoadPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ui:Button Command="{Binding BrowseDirectoryCommand}" Content="浏览" />
+
+                                    <StackPanel
+                                        Margin="125,5"
+                                        HorizontalAlignment="Right"
+                                        Orientation="Horizontal">
+
+                                        <TextBlock VerticalAlignment="Center" Text="音量：" />
+                                        <Slider
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            Maximum="1"
+                                            Minimum="0"
+                                            SmallChange="0.001"
+                                            Value="{Binding VideoVolume, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <ui:Button Command="{Binding MuteCommand}" Content="静音">
+                                            <ui:Button.Style>
+                                                <Style BasedOn="{StaticResource DefaultUiButtonStyle}" TargetType="{x:Type ui:Button}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsVideoMute}" Value="True">
+                                                            <Setter Property="Content" Value="取消静音" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock VerticalAlignment="Center" Text="选择播放文件：" />
+                                    <ComboBox
+                                        MinWidth="140"
+                                        MaxWidth="400"
+                                        ItemsSource="{Binding LocalFiles, UpdateSourceTrigger=PropertyChanged}"
+                                        SelectedItem="{Binding CurrentFile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ResourceDictionary>
+
                 </ui:Flyout.Resources>
                 <ContentControl Content="{Binding BackgroundImageRequest.SelectedRequestInstance, UpdateSourceTrigger=PropertyChanged}" />
             </ui:Flyout>

@@ -35,7 +35,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
         {
             { WallHavenRequest.DisplayName, typeof(WallHavenRequest) },
             { LocalBackground.DisplayName,typeof(LocalBackground)},
-            { WebBrowser.DisplayName,typeof(WebBrowser) }
+            { LocalVideo.DisplayName,typeof(LocalVideo) },
+            { WebBrowser.DisplayName,typeof(WebBrowser) },
         };
         #endregion
 
@@ -49,6 +50,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             set => SetProperty(ref useableRequest, value);
         }
 
+        bool DisableSelectionNotice = false;
+
         private string? selectedRequest = "";
         public string? SelectedRequest
         {
@@ -56,9 +59,15 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             set
             {
                 SetProperty(ref selectedRequest, value);
-
-                WeakReferenceMessenger.Default.Send(new RequestModelChangedMessage(SelectedRequestInstance?.RequestUseage??RequestBaseUseage.NormalRequest));
-
+                if (!DisableSelectionNotice)
+                {
+                    WeakReferenceMessenger.Default.Send(new RequestModelChangedMessage(SelectedRequestInstance?.RequestUseage ?? RequestBaseUseage.NormalRequest));
+                    if (currentModelInstance != null && !(value.IsNullOrEmpty()))
+                    {
+                        currentModelInstance.Config.UserConfigData.LastRequestBaseType = SelectedRequestInstance?.Type;
+                        WeakReferenceMessenger.Default.Send(new RequestSaveConfigMessage(ConfigType.User));
+                    }
+                }
                 OnPropertyChanged("SelectedRequestInstance");
                 OnPropertyChanged("IsWebBackground");
                 OnPropertyChanged("IsVideoBackground");
@@ -68,16 +77,16 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
         public bool IsWebBackground
         {
-            get=>SelectedRequestInstance?.RequestUseage==RequestBaseUseage.WebsiteBackground;
+            get => SelectedRequestInstance?.RequestUseage == RequestBaseUseage.WebsiteBackground;
         }
 
         public bool IsVideoBackground
         {
-            get=>SelectedRequestInstance?.RequestUseage == RequestBaseUseage.VideoBackground;
+            get => SelectedRequestInstance?.RequestUseage == RequestBaseUseage.VideoBackground;
         }
         public bool IsPictureBackground
         {
-            get=>SelectedRequestInstance?.RequestUseage == RequestBaseUseage.PictureBackground;
+            get => SelectedRequestInstance?.RequestUseage == RequestBaseUseage.PictureBackground;
         }
 
         /// <summary>
@@ -114,9 +123,9 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             WriteWebTypes();
 
 
-            WeakReferenceMessenger.Default.Register<RequestAbandonCurrentCacheMessage>(this, (e, t) => 
+            WeakReferenceMessenger.Default.Register<RequestAbandonCurrentCacheMessage>(this, (e, t) =>
             {
-                if(t.Value==0)
+                if (t.Value == 0)
                 {
                     if (RequestCanceller != null)
                     {
@@ -124,9 +133,15 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
                     }
                     currentResponse = null;
                     results = null;
-                    
+
                 }
                 DisableAutoPageIncrease = true;
+            });
+
+            WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, (e, t) =>
+            {
+                SelectedRequest = RequestCollections.FirstOrDefault(x =>
+                    x.Value.Type == currentModelInstance.Config.UserConfigData.LastRequestBaseType).Key;
             });
         }
 
@@ -145,12 +160,31 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             }));
         }
 
+
+        private ICommand? nextVideoCommand = null;
+        public ICommand? NextVideoCommand
+        {
+            get => nextVideoCommand ?? (nextVideoCommand = new RelayCommand(() =>
+            {
+                if (IsVideoBackground)
+                {
+
+                    WeakReferenceMessenger.Default.Send(new VideoMoveNextMessage());
+                }
+            }));
+        }
         #endregion
 
         #region methods
 
 
         #region init
+
+        public RequestBase? FindInstance(Type curType)
+        {
+            return RequestCollections.FirstOrDefault(x => x.Value.Type == curType).Value;
+        }
+
         private RequestBase? CreateInstance(Type type)
         {
             var constructor = type?.GetConstructor(Type.EmptyTypes);
@@ -161,7 +195,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
             var newExpression = Expression.New(constructor);
             var lambda = Expression.Lambda<Func<RequestBase>>(newExpression).Compile();
-            var target= lambda();
+            var target = lambda();
             target.ModelInstance = currentModelInstance;
             return target;
         }
@@ -178,9 +212,9 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             var res = JsonSerializer.Deserialize<Dictionary<string, Type>>(webConfig, opt);
             if (res == null || res.Count < 0)
                 return;
-            foreach(var itr in res)
+            foreach (var itr in res)
             {
-                if(!requestTypes.ContainsKey(itr.Key))
+                if (!requestTypes.ContainsKey(itr.Key))
                 {
                     requestTypes.Add(itr.Key, itr.Value);
                 }
@@ -204,6 +238,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
         {
             try
             {
+                DisableSelectionNotice = true;
                 foreach (var requestType in requestTypes)
                 {
                     var instance = CreateInstance(requestType.Value);
@@ -219,7 +254,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
                 }
                 SelectedRequest = UseableRequest?.FirstOrDefault();
 
-                WeakReferenceMessenger.Default.Register<RequestFillBackgroundMessage>(this, (t, mes) => 
+                WeakReferenceMessenger.Default.Register<RequestFillBackgroundMessage>(this, (t, mes) =>
                 {
                     DisplaySetting_RequestFillBackgroundHandler(mes.Value);
                 });
@@ -228,6 +263,10 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
             catch (Exception ex)
             {
                 Trace.WriteLine($"Initialize with exception {ex}");
+            }
+            finally
+            {
+                DisableSelectionNotice = false;
             }
         }
 
@@ -244,19 +283,19 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
         void QueryWebRequestCache()
         {
-            
+
             try
             {
-               if(SelectedRequestInstance ==null)
+                if (SelectedRequestInstance == null)
                     return;
-               Action? resAct = SelectedRequestInstance.RequestUseage switch
-               { 
-                   RequestBaseUseage.PictureBackground=>OnPictureType,
-                   _=>null
-               };
-               resAct?.Invoke();
+                Action? resAct = SelectedRequestInstance.RequestUseage switch
+                {
+                    RequestBaseUseage.PictureBackground => OnPictureType,
+                    _ => null
+                };
+                resAct?.Invoke();
             }
-            catch(OperationCanceledException )
+            catch (OperationCanceledException)
             {
                 Trace.WriteLine("requst cancelled");
             }
@@ -272,41 +311,48 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
 
         async void OnPictureType()
         {
-            if (SelectedRequestInstance == null)
-                return;
-
-            if (RequestCanceller != null)
+            try
             {
-                RequestCanceller.Cancel();
-            }
-            RequestCanceller = new CancellationTokenSource();
-
-            if (currentResponse == null)
-            {
-                var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
-                currentResponse = await SelectedRequestInstance.Request(query);
-                if (currentResponse == null)//request failed!
+                if (SelectedRequestInstance == null)
                     return;
-                results = SelectedRequestInstance.ParseResult(currentResponse, RequestCanceller.Token);
-                if (DisableAutoPageIncrease)
-                    DisableAutoPageIncrease = false;
-            }
 
-            if (results != null)
-            {
-                await foreach (var itr in results.WithCancellation(RequestCanceller.Token))
+                if (RequestCanceller != null)
                 {
-                    if (itr == null && SelectedRequestInstance.HasReachedEnd(currentResponse))//when reaching end ,reset request to the first
+                    RequestCanceller.Cancel();
+                }
+                RequestCanceller = new CancellationTokenSource();
+
+                if (currentResponse == null)
+                {
+                    var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
+                    currentResponse = await SelectedRequestInstance.Request(query);
+                    if (currentResponse == null)//request failed!
+                        return;
+                    results = SelectedRequestInstance.ParseResult(currentResponse, RequestCanceller.Token);
+                    if (DisableAutoPageIncrease)
+                        DisableAutoPageIncrease = false;
+                }
+
+                if (results != null)
+                {
+                    await foreach (var itr in results.WithCancellation(RequestCanceller.Token))
                     {
-                        SelectedRequestInstance.ResetRequest();
-                        break;
-                    }
-                    else
-                    {
-                        if (itr is string str)
-                            WeakReferenceMessenger.Default.Send(new BackgroundSourceUpdateMessage(str));
+                        if (itr == null && SelectedRequestInstance.HasReachedEnd(currentResponse))//when reaching end ,reset request to the first
+                        {
+                            SelectedRequestInstance.ResetRequest();
+                            break;
+                        }
+                        else
+                        {
+                            if (itr is string str)
+                                WeakReferenceMessenger.Default.Send(new BackgroundSourceUpdateMessage(str));
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
             }
         }
         #endregion

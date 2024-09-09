@@ -570,11 +570,14 @@ namespace DesktopTimer.Views.Controls
             if (particles == null) return;
             var distance = System.Windows.Application.Current.Dispatcher.Invoke(() => MaxMouseConnectionDistance);
             var Attraction = System.Windows.Application.Current.Dispatcher.Invoke(() => MouseAttractionDistance);
-            Parallel.ForEach(particles, (o) =>
+            Task.Run(() => 
             {
-                o.Update(ActualWidth, ActualHeight, mousePosition, distance, Attraction, UnLinkMousePosition);
-                //QuadTree?.UpdateParticle(o);
+                foreach(var o in particles)
+                {
+                    o.Update(ActualWidth, ActualHeight, mousePosition, distance, Attraction, UnLinkMousePosition);
+                }
             });
+
         }
 
 

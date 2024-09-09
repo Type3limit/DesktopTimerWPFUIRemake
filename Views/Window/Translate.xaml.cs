@@ -41,7 +41,7 @@ namespace DeskTopTimer
 
             _searchDelayTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(300)
+                Interval = TimeSpan.FromMilliseconds(600)
             };
             _searchDelayTimer.Tick += SearchDelayTimer_Tick;
         }
@@ -127,6 +127,8 @@ namespace DeskTopTimer
         bool IsInClose = false;
         public void WindowClose()
         {
+            viewModel?.CancelAll();
+            viewModel.TranslateSource = "";
             if(IsInClose)
                 return;
             IsInClose = true;

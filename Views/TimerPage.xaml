@@ -32,9 +32,9 @@
         <Grid>
             <Frame
                 x:Name="ContentFrame"
-                Navigating="ContentFrame_Navigating"
                 Panel.ZIndex="0"
                 DataContext="{Binding ElementName=rootPage, Path=DataContext}"
+                Navigating="ContentFrame_Navigating"
                 Opacity="{Binding DisplaySetting.BackgroundImageOpacity, UpdateSourceTrigger=PropertyChanged}" />
 
             <Frame
@@ -119,6 +119,16 @@
                 Command="{Binding DisplaySetting.OpenExtraSettingCommand}"
                 Header="打开网页地址"
                 Visibility="{Binding BackgroundImageRequest.IsWebBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
+
+            <ui:MenuItem
+                Command="{Binding DisplaySetting.OpenExtraSettingCommand}"
+                Header="打开视频选项"
+                Visibility="{Binding BackgroundImageRequest.IsVideoBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
+
+            <ui:MenuItem
+                Command="{Binding BackgroundImageRequest.NextVideoCommand}"
+                Header="下一条视频"
+                Visibility="{Binding BackgroundImageRequest.IsVideoBackground, Converter={StaticResource Bool2VisiConverter}, UpdateSourceTrigger=PropertyChanged}" />
 
 
             <ui:MenuItem

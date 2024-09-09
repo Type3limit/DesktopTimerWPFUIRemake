@@ -211,12 +211,21 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
         public override async Task<ResponseBase?> Request(RequestQueryBase? query)
         {
-            if (!(query is WallhavenRequestQuery wallHavenQuery))
+            try
+            {
+                if (!(query is WallhavenRequestQuery wallHavenQuery))
+                    return null;
+                var curQuery = wallHavenQuery.ToQuery();
+                var requestUrl = RequestUrl + curQuery;
+                var res = await requestUrl.GetAsync();
+                return await res.GetJsonAsync<WallhavenResponse?>();
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex);
                 return null;
-            var curQuery = wallHavenQuery.ToQuery();
-            var requestUrl = RequestUrl + curQuery;
-            var res = await requestUrl.GetAsync();
-            return await res.GetJsonAsync<WallhavenResponse?>();
+            }
+           
         }
 
         public override bool HasReachedEnd(ResponseBase? currentResponse)
