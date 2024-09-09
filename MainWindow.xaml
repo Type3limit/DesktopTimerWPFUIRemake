@@ -314,6 +314,10 @@
                             </ui:MenuItem.Header>
                         </ui:MenuItem>
                         <ui:MenuItem
+                            x:Name="ShowWindow"
+                            Command="{Binding ShowMainWindowCommand}"
+                            Header="显示主窗口" />
+                        <ui:MenuItem
                             x:Name="ExitProgram"
                             Command="{Binding ExitProgramCommand}"
                             Header="退出" />

@@ -112,7 +112,7 @@ namespace DesktopTimer
                         SwitchToThisWindow(handle.Value, true);    // 激活，显示在最前  
                     }
                 }
-                Environment.Exit(0);
+                Application.Current.Shutdown();
             }
         }
 

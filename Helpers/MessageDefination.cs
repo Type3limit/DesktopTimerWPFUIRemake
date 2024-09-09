@@ -45,6 +45,11 @@ namespace DesktopTimer.Helpers
     /// </summary>
     public class RequestCloseProgramMessage : TypedMessage<object>
     { }
+    /// <summary>
+    /// To request show main window
+    /// </summary>
+    public class RequestShowMainWindowMessage : TypedMessage<object>
+    { }
 
 
     /// <summary>

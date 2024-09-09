@@ -100,6 +100,19 @@ namespace DesktopTimer.Models
             })); 
         }
 
+
+        private ICommand? showMainWindowCommand;
+        /// <summary>
+        /// To exit current app
+        /// </summary>
+        public ICommand ShowMainWindowCommand
+        {
+            get => showMainWindowCommand ?? (showMainWindowCommand = new RelayCommand(() =>
+            {
+                WeakReferenceMessenger.Default.Send(new RequestShowMainWindowMessage());
+            }));
+        }
+
         private ICommand? openFolderCommand;
         /// <summary>
         /// To open folder

@@ -44,11 +44,20 @@ namespace DesktopTimer
             {
                 Application.Current.Shutdown(0);
             });
+            WeakReferenceMessenger.Default.Register<RequestShowMainWindowMessage>(this, (o, e) =>
+            {
+                Application.Current.Dispatcher.Invoke(() => 
+                {
+                    Application.Current.MainWindow.Show();
+                    Application.Current.MainWindow.Activate();
+                });
+            });
 
             NavigationCommands.BrowseBack.InputGestures.Clear();
             NavigationCommands.BrowseForward.InputGestures.Clear();
 
-            (this.DataContext as MainWorkModel)?.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showTranslate, /*showEmoji*/ });
+            (this.DataContext as MainWorkModel)?.SetShotKeyDiscribe(new List<HotKey>()
+            { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showTranslate, /*showEmoji*/ });
 
         }
 
@@ -102,12 +111,11 @@ namespace DesktopTimer
         HotKey flashKey = new HotKey(Key.F, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnFreshKey), "刷新");
         HotKey setKey = new HotKey(Key.S, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnSetKey), "设置显示\\隐藏");
         HotKey hiddenTimerKey = new HotKey(Key.T, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
-        HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "操作页地址显示\\隐藏");
+        HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "操作页显示\\隐藏");
         //暂时屏蔽Everything api
         //HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
         HotKey showTranslate = new HotKey(Key.Z, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnTranslate), "唤起翻译窗口");
         HotKey muteVideo = new HotKey(Key.M, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnMute), "静音\\取消静音");
-
         HotKey increaseVolume= new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeIncrease), "增加音量");
         HotKey decreaseVolume = new HotKey(Key.D, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeDecrease), "减少音量");
 
