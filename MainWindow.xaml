@@ -52,7 +52,6 @@
         <helper:TimeSpanFormatter x:Key="timeSpanFormatter" />
     </Window.Resources>
     <Window.DataContext>
-
         <model:MainWorkModel x:Name="mainWorkModel" />
     </Window.DataContext>
 
@@ -87,7 +86,7 @@
 
             <ui:Flyout
                 x:Name="ExtraFlyout"
-                Width="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ui:FluentWindow}, Path=ActualWidth}"
+                Width="{Binding ElementName=mainWindow, Path=ActualWidth}"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Bottom"
                 BorderThickness="0"
@@ -302,7 +301,7 @@
 
                                     <StackPanel Margin="0,5" Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource labelTextBlock}" Text="API地址：" />
-                                        <TextBox Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox MinWidth="200" Text="{Binding RequestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -310,13 +309,7 @@
                                         <ComboBox
                                             DisplayMemberPath="model_name"
                                             ItemsSource="{Binding Models, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <ia:Interaction.Triggers>
-                                                <ia:EventTrigger EventName="SelectionChanged">
-                                                    <ia:InvokeCommandAction Command="{Binding OnModelChangedCommand}" />
-                                                </ia:EventTrigger>
-                                            </ia:Interaction.Triggers>
-                                        </ComboBox>
+                                            SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         <TextBlock Style="{StaticResource labelTextBlock}" Text="采样器：" />
                                         <ComboBox
                                             DisplayMemberPath="name"
@@ -324,14 +317,30 @@
                                             SelectedItem="{Binding SelectedSampler, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
+
+                                    <StackPanel Margin="0,5" Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词预设：" />
+                                        <ComboBox
+                                            DisplayMemberPath="DisplayName"
+                                            ItemsSource="{Binding SDPresets, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedItem="{Binding SelectedPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+
                                     <StackPanel Margin="0,5" Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词：" />
-                                        <TextBox Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox
+                                            MinWidth="200"
+                                            MaxWidth="500"
+                                            Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Margin="0,5" Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource labelTextBlock}" Text="反向提示词：" />
-                                        <TextBox Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox
+                                            MinWidth="200"
+                                            MaxWidth="500"
+                                            Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
 
@@ -387,7 +396,6 @@
                                     <ui:LoadingScreen.Content>
                                         <StackPanel>
                                             <TextBlock Text="正在生成..." />
-                                            <ProgressBar Value="" />
                                         </StackPanel>
                                     </ui:LoadingScreen.Content>
                                 </ui:LoadingScreen>

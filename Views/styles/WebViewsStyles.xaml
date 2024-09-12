@@ -243,9 +243,7 @@
                     <ComboBox
                         DisplayMemberPath="model_name"
                         ItemsSource="{Binding Models, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                     
-                    </ComboBox>
+                        SelectedItem="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Style="{StaticResource labelTextBlock}" Text="采样器：" />
                     <ComboBox
                         DisplayMemberPath="name"
@@ -259,20 +257,24 @@
                     <ComboBox
                         DisplayMemberPath="DisplayName"
                         ItemsSource="{Binding SDPresets, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding SelectedPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                     
-                    </ComboBox>
+                        SelectedItem="{Binding SelectedPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
 
 
                 <StackPanel Margin="0,5" Orientation="Horizontal">
                     <TextBlock Style="{StaticResource labelTextBlock}" Text="提示词：" />
-                    <TextBox MinWidth="200" Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox
+                        MinWidth="200"
+                        MaxWidth="500"
+                        Text="{Binding Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
 
                 <StackPanel Margin="0,5" Orientation="Horizontal">
                     <TextBlock Style="{StaticResource labelTextBlock}" Text="反向提示词：" />
-                    <TextBox MinWidth="200" Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox
+                        MinWidth="200"
+                        MaxWidth="500"
+                        Text="{Binding NegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
 
 

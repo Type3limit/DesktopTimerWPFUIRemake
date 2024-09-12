@@ -168,7 +168,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         ICommand? onPresetsChangedCommand = null;
         public ICommand OnPresetsChangedCommand
         {
-            get=>onModelChangedCommand??(onPresetsChangedCommand = new RelayCommand(() => 
+            get=> onPresetsChangedCommand ?? (onPresetsChangedCommand = new RelayCommand(() => 
             {
                 if(SelectedPreset != null)
                 {
@@ -228,14 +228,14 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                     Prompt = Prompt,
                     NegativePrompt = NegativePrompt,
                     Steps = Steps,
-                    Width = Width/2,
-                    Height = Height/2,
+                    Width = Width,///2,
+                    Height = Height,//2,
                     BatchSize = GenerateNumber,
                     NIter = GenerateTimes,
                     SamplerName = SelectedSampler?.name ?? "Euler",
-                    EnableHr = true,
-                    HrResizeX = Width,
-                    HrResizeY = Height,
+                    //EnableHr = true,
+                    //HrResizeX = Width,
+                    //HrResizeY = Height,
                     CfgScale = ConfigScale,
                 };
                 var res = await SDAPI.TextToImage(param, RequestUrl);
@@ -543,8 +543,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
         public class Text2ImageResonse
         {
             public List<string>? images { set; get; }
-            public string? parameters { set; get; }
-            public string? info { set; get; }
+            //public string? parameters { set; get; }
+            //public string? info { set; get; }
         }
 
         public static async Task<Text2ImageResonse?> TextToImage(Text2ImageRequestParam param, string apiUrl)
