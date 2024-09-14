@@ -15,6 +15,7 @@ using DesktopTimer.models;
 using DesktopTimer.Views.Controls;
 using System.Windows.Media;
 using DesktopTimer.Models.BackgroundWorkingModel.Definations;
+using DesktopTimer.Models.ChatRoom.Defination;
 
 namespace DesktopTimer.Models
 {
@@ -31,6 +32,13 @@ namespace DesktopTimer.Models
 
         [ObservableProperty]
         TranslateConfig translateConfigData = new TranslateConfig();
+
+
+        #region chat room
+        [ObservableProperty]
+        UserInfo chatRoomCurrentUserInfo = new UserInfo();
+        #endregion
+        
         #endregion
 
 
@@ -52,7 +60,6 @@ namespace DesktopTimer.Models
             mainWorkModelInstance = modelInstance;
             WeakReferenceMessenger.Default.Register<RequestSaveConfigMessage>(this, (e, t) =>
             {
-
                 (t.Value switch
                 {
                     ConfigType.User => (Action?)WriteUserSetting,
@@ -205,6 +212,7 @@ namespace DesktopTimer.Models
             }
 
         }
+
         static object userSettingLocker = new object();
         public void WriteUserSetting()
         {
@@ -258,6 +266,20 @@ namespace DesktopTimer.Models
                 }
             }
         }
+
+
+        #region chat
+
+        void WriteChatCurrentUserInfo()
+        {
+
+        }
+        void ReadChatCurrentUserInfo()
+        {
+
+        }
+
+        #endregion
         #endregion
 
 
@@ -281,6 +303,7 @@ namespace DesktopTimer.Models
                 WriteTranslateConfig();
             }));
         }
+
         ICommand? resetTanslateConfigCommand = null;
         public ICommand ResetTranslateConfigCommand
         {
@@ -291,7 +314,6 @@ namespace DesktopTimer.Models
         }
 
         ICommand? saveUserConfigCommand = null;
-
         public ICommand SaveUserConfigCommand
         {
             get => saveUserConfigCommand ?? (saveUserConfigCommand = new RelayCommand(() =>

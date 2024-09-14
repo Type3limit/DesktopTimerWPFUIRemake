@@ -5,6 +5,7 @@ using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
 using DesktopTimer.Models;
 using DesktopTimer.Models.BackgroundWorkingModel;
+using DesktopTimer.Models.Everything;
 using DesktopTimer.Views.Models;
 using System;
 using System.Collections.Generic;
@@ -48,6 +49,11 @@ namespace DesktopTimer.Models
             get => translator ?? (translator = new TranslateModel(this));
         }
 
+        private EverythingWrapper? everythingSearch = null;
+        public EverythingWrapper EverythingSearch
+        {
+            get=> everythingSearch ?? (everythingSearch =new EverythingWrapper(this));
+        }
 
         private LocalConfig? config =  null;
         /// <summary>

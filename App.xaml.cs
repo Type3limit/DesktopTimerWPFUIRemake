@@ -19,6 +19,9 @@ namespace DesktopTimer
     /// </summary>
     public partial class App : Application
     {
+
+        DoubleCtrlHook? dbCtrlHook = null;
+
         private void AddTraceListener()
         {
             string logfile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/logs", DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fff") + ".log");
@@ -96,6 +99,9 @@ namespace DesktopTimer
                 AddTraceListener();
 
                 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+
+                dbCtrlHook = new DoubleCtrlHook();
 
                 base.OnStartup(e);
 
@@ -182,6 +188,7 @@ namespace DesktopTimer
 
         protected override void OnExit(ExitEventArgs e)
         {
+            dbCtrlHook.DisableHook();
             Trace.WriteLine($"[{DateTime.Now.ToLocalTime().ToString("yyyy-MM-dd hh:mm:ss:fff")}]Application->Exit Start");
             TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
             base.OnExit(e);

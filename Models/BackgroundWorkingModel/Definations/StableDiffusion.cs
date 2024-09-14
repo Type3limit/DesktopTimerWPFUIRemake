@@ -1,12 +1,6 @@
-﻿using AllInAI.Sharp.API.Dto;
-using AllInAI.Sharp.API.Req;
-using AllInAI.Sharp.API.Res;
-using AllInAI.Sharp.API.Service;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using DesktopTimer.Helpers;
 using FFmpeg.AutoGen;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,14 +15,16 @@ using System.Windows.Forms.Design;
 using static DesktopTimer.Models.BackgroundWorkingModel.Definations.SDAPI;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using System.Text.Json.Nodes;
 
 namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 {
     public class SDResponse : IResponseBase
     {
-        public ImgRes? imageData { set; get; }
     }
-    public class SDQuery : Txt2ImgReq, IRequestQueryBase
+    public class SDQuery :  IRequestQueryBase
     {
 
     }
@@ -142,7 +138,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                       Samplers = await SDAPI.GetSamplers(RequestUrl);
                       SelectedSampler = Samplers.FirstOrDefault();
 
-                      SDPresets = JsonConvert.DeserializeObject<List<SDPresets>>(FileMapper.StableDiffusionPresetFile.ReadText());
+                      
+                      SDPresets = JsonSerializer.Deserialize<List<SDPresets>>(FileMapper.StableDiffusionPresetFile.ReadText());
                       SelectedPreset = null;
                   }
                   catch(Exception ex)
@@ -559,7 +556,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                 {
                     var result = await response.Content.ReadAsStringAsync();
 
-                    return JsonConvert.DeserializeObject<Text2ImageResonse>(result);
+                    return JsonSerializer.Deserialize<Text2ImageResonse>(result);
                 }
                 else
                 {
@@ -593,7 +590,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
                 var response = await client.SendAsync(request);
                 var jsonRaw = await response.Content.ReadAsStringAsync();
-                var jArray = JsonConvert.DeserializeObject<List<SamplerData>>(jsonRaw);
+                var jArray = JsonSerializer.Deserialize<List<SamplerData>>(jsonRaw);
                 return jArray;
             }
             catch { return null; }
@@ -624,7 +621,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
                 var response = await client.SendAsync(request);
                 var jsonRaw = await response.Content.ReadAsStringAsync();
-                var jArray = JsonConvert.DeserializeObject<List<ModelData>>(jsonRaw);
+                var jArray = JsonSerializer.Deserialize<List<ModelData>>(jsonRaw);
                 return jArray;
             }
             catch { return null; }
@@ -641,7 +638,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             AutomaticJsonSetModels payload = new AutomaticJsonSetModels();
             payload.sd_model_checkpoint = model;
 
-            string json = JsonConvert.SerializeObject(payload);
+            string json = JsonSerializer.Serialize(payload);
 
             var client = new HttpClient();
             var content = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
@@ -695,7 +692,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
             public string model = "clip";
         }
 
-        public static async Task<string> AutomaticInterrogate(string URI, Bitmap image)
+        public static async Task<string?> AutomaticInterrogate(string URI, Bitmap image)
         {
             string base64Image = "data:image/png;base64," + Convert.ToBase64String(ImageToBytes(image));
             var struc = new AutomaticInterrogateStruct
@@ -705,7 +702,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
 
             try
             {
-                string json = JsonConvert.SerializeObject(struc);
+                string json = JsonSerializer.Serialize(struc);
                 var client = new HttpClient();
                 var content = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage
@@ -715,8 +712,8 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                     Content = content
                 };
                 var response = await client.SendAsync(request);
-                dynamic responseD = JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
-                return responseD.caption.ToString();
+                var responseD = JsonSerializer.Deserialize<JsonNode>(await response.Content.ReadAsStringAsync());
+                return responseD["caption"]?.ToString();
             }
             catch { return null; }
         }
@@ -757,7 +754,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                 var response = await client.SendAsync(request);
                 var jsonRaw = await response.Content.ReadAsStringAsync();
 
-                JObject obj = JObject.Parse(jsonRaw);
+                var obj = JsonNode.Parse(jsonRaw);
                 string value = (string)obj["sd_model_checkpoint"];
                 return value;
             }
@@ -784,7 +781,7 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                 var response = await client.SendAsync(request);
 
                 var json = await response.Content.ReadAsStringAsync();
-                var responseObject = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+                var responseObject = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
                 List<string> modelList = responseObject["model_list"];
 
                 return modelList.ToArray();

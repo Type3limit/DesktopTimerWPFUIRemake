@@ -22,6 +22,7 @@ using HotKey = DesktopTimer.Helpers.HotKey;
 using DesktopTimer.Models;
 using DeskTopTimer;
 using DesktopTimer.Models.BackgroundWorkingModel.Definations;
+using DesktopTimer.Views.Window;
 namespace DesktopTimer
 {
     /// <summary>
@@ -33,6 +34,10 @@ namespace DesktopTimer
         MainWorkModel? ModelInstance = null;
 
         static OptionsWindow? translateWindow = null;
+        static EverythingWindow? everythingWindow = null;
+
+
+
         public MainWindow()
         {
             //Appearance.SystemThemeWatcher.Watch(this);
@@ -57,7 +62,7 @@ namespace DesktopTimer
             NavigationCommands.BrowseForward.InputGestures.Clear();
 
             (this.DataContext as MainWorkModel)?.SetShotKeyDiscribe(new List<HotKey>()
-            { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showTranslate, /*showEmoji*/ });
+            { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showTranslate, showEverything });
 
         }
 
@@ -68,7 +73,7 @@ namespace DesktopTimer
             {
                 ModelInstance = mainModel;
                 ModelInstance?.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey,
-                    hiddenTimerKey, showWebFlyOut, muteVideo,increaseVolume,decreaseVolume/*showTranslate, showEmoji*/ });
+                    hiddenTimerKey, showWebFlyOut, muteVideo,increaseVolume,decreaseVolume,showTranslate, showEverything });
             }
         }
 
@@ -78,8 +83,11 @@ namespace DesktopTimer
             TimerPage.DataContext = this.DataContext;
             TimerPage.MouseMoveHandler += TimerPage_MouseMoveHandler ;
             ContentFrame.Navigate(TimerPage);
-
             windowInstance = this;
+            WeakReferenceMessenger.Default.Register<RequestOpenEverythingWindow>(this, (o, e) => 
+            {
+                OnShowEveryThingFlyOut();
+            });
             
         }
 
@@ -112,14 +120,11 @@ namespace DesktopTimer
         HotKey setKey = new HotKey(Key.S, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnSetKey), "设置显示\\隐藏");
         HotKey hiddenTimerKey = new HotKey(Key.T, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
         HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "操作页显示\\隐藏");
-        //暂时屏蔽Everything api
-        //HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
         HotKey showTranslate = new HotKey(Key.Z, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnTranslate), "唤起翻译窗口");
+        HotKey showEverything = new HotKey(Key.E,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnShowEveryThingFlyOut),"唤起everything查询");
         HotKey muteVideo = new HotKey(Key.M, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnMute), "静音\\取消静音");
-        HotKey increaseVolume= new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeIncrease), "增加音量");
-        HotKey decreaseVolume = new HotKey(Key.D, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeDecrease), "减少音量");
-
-        //HotKey showEmoji = new HotKey(Key.Q, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnEmoji), "唤起表情包窗口");
+        HotKey increaseVolume= new HotKey(Key.O, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeIncrease), "增加音量");
+        HotKey decreaseVolume = new HotKey(Key.P, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeDecrease), "减少音量");
 
         static MainWindow windowInstance = null;
         static bool IsWindowShow = false;
@@ -211,6 +216,10 @@ namespace DesktopTimer
             }
         }
 
+
+
+      
+
         static public void OnVolumeIncrease(HotKey currentKey)
         {
             if (windowInstance == null)
@@ -231,7 +240,38 @@ namespace DesktopTimer
                 WeakReferenceMessenger.Default.Send(new VideoVolumeShortCutMessage(VolumeShortOption.Decrease));
             }
         }
-
+        static public void OnShowEveryThingFlyOut(HotKey hotKey)
+        {
+            if (everythingWindow != null && !everythingWindow.IsClosed)
+            {
+                everythingWindow.WindowClose();
+                return;
+            }
+            else
+            {
+                everythingWindow = new EverythingWindow();
+                everythingWindow.DataContext = (windowInstance.DataContext as MainWorkModel)?.EverythingSearch;
+                everythingWindow.Show();
+                everythingWindow.Activate();
+                everythingWindow.Focus();
+            }
+        }
+        static public void OnShowEveryThingFlyOut()
+        {
+            if (everythingWindow != null && !everythingWindow.IsClosed)
+            {
+                everythingWindow.WindowClose();
+                return;
+            }
+            else
+            {
+                everythingWindow = new EverythingWindow();
+                everythingWindow.DataContext = (windowInstance.DataContext as MainWorkModel)?.EverythingSearch;
+                everythingWindow.Show();
+                everythingWindow.Activate();
+                everythingWindow.Focus();
+            }
+        }
 
         private void PositionSlider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {

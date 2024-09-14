@@ -78,10 +78,10 @@ namespace DesktopTimer.Helpers
         // ******************************************************************
         public void Unregister()
         {
-            HotKey hotKey;
-            if (_dictHotKeyToCalBackProc.TryGetValue(Id, out hotKey))
+            if (_dictHotKeyToCalBackProc?.TryGetValue(Id, out HotKey hotKey)==true)
             {
                 UnregisterHotKey(IntPtr.Zero, Id);
+                _dictHotKeyToCalBackProc.Remove(Id);  // 从字典中移除
             }
         }
 

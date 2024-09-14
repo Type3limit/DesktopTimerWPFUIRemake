@@ -109,6 +109,9 @@ namespace DesktopTimer.Helpers
         User,
         Program,
         Translate,
+        
+        ChatRoomCurrentUser,
+        ChatRoomOtherUser,
     }
 
     /// <summary>
@@ -202,4 +205,8 @@ namespace DesktopTimer.Helpers
     public class VideoMoveNextMessage:TypedMessage<object>
     {
     }
+
+    public class RequestOpenEverythingWindow : TypedMessage<object>
+    { }
+
 }

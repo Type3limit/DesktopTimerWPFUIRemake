@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 namespace DesktopTimer.Helpers
 {
     /// <summary>
-    /// 路径定义
+    /// Path definitions
     /// </summary>
     public class FileMapper
     {
 
         #region dir
         /// <summary>
-        /// 图片缓存目录
+        /// Picture cache directory
         /// </summary>
         public static string PictureCacheDir
         {
@@ -28,7 +28,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 配置文件目录
+        /// Configuration file directory
         /// </summary>
         public static string ConfigureDir
         {
@@ -43,7 +43,23 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 视频缓存目录
+        /// Chat room related files
+        /// </summary>
+        public static string ChatRoomDir
+        {
+            get
+            {
+#pragma warning disable CS8604 
+                string currentFile = Path.Combine(ConfigureDir, ".ChatRoom");
+#pragma warning restore CS8604 
+                if (!Directory.Exists(currentFile))
+                    Directory.CreateDirectory(currentFile);
+                return currentFile;
+            }
+        }
+
+        /// <summary>
+        /// Video cache directory
         /// </summary>
         public static string VideoCacheDir
         {
@@ -56,7 +72,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 普通背景目录
+        /// Normal background directory
         /// </summary>
         public static string NormalPictureDir
         {
@@ -69,7 +85,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 生成背景目录
+        /// Generated background directory
         /// </summary>
         public static string GeneratedPictureDir
         {
@@ -83,37 +99,37 @@ namespace DesktopTimer.Helpers
         }
 
         /// <summary>
-        /// 本地背景目录
+        /// Local background directory
         /// </summary>
         public static string LocalPictureDir
         {
             get
             {
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
+#pragma warning disable CS8604 // Possible null reference argument.
                 string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Local");
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
+#pragma warning restore CS8604 // Possible null reference argument.
                 if (!Directory.Exists(currentFile))
                     Directory.CreateDirectory(currentFile);
                 return currentFile;
             }
         }
         /// <summary>
-        /// 收藏目录
+        /// Collection directory
         /// </summary>
         public static string CollectionPictureDir
         {
             get
             {
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
+#pragma warning disable CS8604 // Possible null reference argument.
                 string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Collect");
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
+#pragma warning restore CS8604 // Possible null reference argument.
                 if (!Directory.Exists(currentFile))
                     Directory.CreateDirectory(currentFile);
                 return currentFile;
             }
         }
         /// <summary>
-        /// json配置文件路径
+        /// JSON configuration file path
         /// </summary>
         public static string ConfigureJson
         {
@@ -126,9 +142,9 @@ namespace DesktopTimer.Helpers
             }
         }
 
-       
+
         /// <summary>
-        /// 网址记录json路径
+        /// URL record JSON path
         /// </summary>
         public static string BackTypesJson
         {
@@ -141,15 +157,15 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// CefBrowser缓存数据根目录
+        /// CefBrowser cache data root directory
         /// </summary>
         public static string CefBrowserDataDir
         {
             get
             {
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
+#pragma warning disable CS8604 // Possible null reference argument.
                 string cefBrowserData = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, @"CefBrowserData\");
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
+#pragma warning restore CS8604 // Possible null reference argument.
                 if (!Directory.Exists(cefBrowserData))
                 {
                     Directory.CreateDirectory(cefBrowserData);
@@ -158,7 +174,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 网络日志目录
+        /// Network log directory
         /// </summary>
         public static string CefBrowserLogPath
         {
@@ -173,7 +189,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 网络缓存目录
+        /// Network cache directory
         /// </summary>
         public static string CefBrowserCacheDir
         {
@@ -188,7 +204,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 网络用户信息缓存
+        /// Network user information cache
         /// </summary>
         public static string CefBrowserUserDataDir
         {
@@ -203,7 +219,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 日志文件目录
+        /// Log file directory
         /// </summary>
         public static string CurrentLogFileDir
         {
@@ -217,7 +233,7 @@ namespace DesktopTimer.Helpers
         }
 
         /// <summary>
-        /// 预设文件目录
+        /// Preset file directory
         /// </summary>
         public static string AssetsFileDir
         {
@@ -234,7 +250,7 @@ namespace DesktopTimer.Helpers
         #region file
         private static string currentLogFile = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
         /// <summary>
-        /// 当前日志文件
+        /// Current log file
         /// </summary>
         public static string CurrentLogFile
         {
@@ -260,7 +276,7 @@ namespace DesktopTimer.Helpers
         }
 
         /// <summary>
-        /// 程序配置文件
+        /// Program configuration file
         /// </summary>
         public static string ProgramSettingFile
         {
@@ -275,7 +291,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 用户配置文件
+        /// User configuration file
         /// </summary>
         public static string UserConfigureFile
         {
@@ -290,7 +306,7 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// 用户配置文件
+        /// User configuration file
         /// </summary>
         public static string TranslateConfigFile
         {
@@ -305,13 +321,29 @@ namespace DesktopTimer.Helpers
             }
         }
         /// <summary>
-        /// SD 预设文件
+        /// SD preset file
         /// </summary>
         public static string StableDiffusionPresetFile
         {
             get
             {
                 var file = AssetsFileDir.PathCombine("StableDiffsionPresets.json");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+
+        /// <summary>
+        /// Chat room file
+        /// </summary>
+        public static string ChatRoomUserInfoListsFile
+        {
+            get
+            {
+                var file = ChatRoomDir.PathCombine("UserInfoLists.json");
                 if (!file.IsFileExist())
                 {
                     File.Create(file).Close();

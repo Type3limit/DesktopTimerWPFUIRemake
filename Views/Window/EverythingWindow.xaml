@@ -1,0 +1,204 @@
+﻿<mah:MetroWindow
+    x:Class="DesktopTimer.Views.Window.EverythingWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:ia="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:local="clr-namespace:DesktopTimer.Views.Window"
+    xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="clr-namespace:DesktopTimer.Models.Everything"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="EverythingWindow"
+    Width="500"
+    Height="105"
+    d:DataContext="{d:DesignInstance model:EverythingWrapper}"
+    AllowsTransparency="True"
+    Background="Transparent"
+    BorderBrush="Transparent"
+    BorderThickness="0"
+    ResizeMode="NoResize"
+    ShowCloseButton="False"
+    ShowInTaskbar="False"
+    ShowMaxRestoreButton="False"
+    ShowMinButton="False"
+    ShowTitleBar="False"
+    Topmost="True"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListBox/ListBoxItem.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Border
+        BorderBrush="Transparent"
+        BorderThickness="0"
+        ClipToBounds="True"
+        CornerRadius="8"
+        SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect
+                BlurRadius="10"
+                Opacity="0.3"
+                ShadowDepth="5" />
+        </Border.Effect>
+        <Border.Background>
+            <SolidColorBrush Opacity="0.6" Color="{DynamicResource SystemChromeLowColor}" />
+        </Border.Background>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="45" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border
+                Grid.Row="0"
+                Margin="0,5"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="{DynamicResource SystemChromeLowColor}"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="10">
+                <ui:TextBlock
+                    Margin="5,8"
+                    FontFamily="pack://application,,,/Assets/DS-DIGI.ttf"
+                    Text="Everything" />
+            </Border>
+
+            <TextBox
+                x:Name="InPutText"
+                Grid.Row="1"
+                Width="450"
+                MinHeight="45"
+                Margin="10,0"
+                VerticalAlignment="Center"
+                FontSize="22"
+                Foreground="White"
+                PreviewKeyDown="TextBox_KeyDown"
+                Text="{Binding SearchKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                <ia:Interaction.Triggers>
+                    <ia:EventTrigger EventName="TextChanged">
+                        <ia:InvokeCommandAction Command="{Binding StartSearchCommand}" />
+                    </ia:EventTrigger>
+                </ia:Interaction.Triggers>
+            </TextBox>
+            <ui:Flyout
+                Grid.Row="1"
+                MaxHeight="500"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Focusable="False"
+                IsOpen="{Binding ShouldOpenFlyouts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                Placement="Right">
+                <Border Background="Transparent">
+                    <Grid>
+                        <ListBox
+                            x:Name="ResultBox"
+                            Width="500"
+                            MaxHeight="300"
+                            Margin="0"
+                            Padding="0"
+                            Background="#88000000"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Focusable="False"
+                            ItemsSource="{Binding CurrentResults, UpdateSourceTrigger=PropertyChanged}"
+                            MouseDoubleClick="ResultBox_MouseDoubleClick"
+                            ScrollViewer.ScrollChanged="ResultBox_ScrollChanged_1"
+                            SelectedItem="{Binding SelectedResult, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Vertical" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style BasedOn="{StaticResource DefaultListBoxItemStyle}" TargetType="{x:Type ListBoxItem}">
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="Padding" Value="0" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="{Binding OpenFileCommand}" Header="打开" />
+                                    <MenuItem Command="{Binding OpenDirectoryCommand}" Header="打开所在目录" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="25" />
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="250" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+
+                                        <Image
+                                            Grid.Column="0"
+                                            Width="15"
+                                            Height="15"
+                                            Margin="5,0"
+                                            Source="{Binding Icon}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Width="200"
+                                            Margin="5"
+                                            FontSize="12"
+                                            Foreground="White"
+                                            Text="{Binding Filename}"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="NoWrap"
+                                            ToolTip="{Binding Path}" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Text="（" />
+                                            <TextBlock
+                                                Width="230"
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="White"
+                                                Text="{Binding Path}"
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="NoWrap"
+                                                ToolTip="{Binding Path}" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Text="）" />
+
+
+                                        </StackPanel>
+                                        <StackPanel
+                                            Grid.Column="3"
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Text="正在被使用：" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Text="{Binding RunCount}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </ui:Flyout>
+        </Grid>
+    </Border>
+</mah:MetroWindow>
