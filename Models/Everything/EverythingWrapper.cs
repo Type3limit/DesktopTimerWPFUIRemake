@@ -12,6 +12,8 @@ using System.Windows.Input;
 using System.Windows;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Metrics;
+using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
 
 namespace DesktopTimer.Models.Everything
 {
@@ -26,7 +28,7 @@ namespace DesktopTimer.Models.Everything
         string searchKey = "";
 
         [ObservableProperty]
-        ObservableCollection<Result?>? currentResults = new ObservableCollection<Result?>();
+        ObservableCollection<Result?> currentResults = new ObservableCollection<Result?>();
 
         [ObservableProperty]
         Result? selectedResult;
@@ -98,10 +100,10 @@ namespace DesktopTimer.Models.Everything
                     psi.Arguments = "/e,/select," + SelectedResult.Path;
                     System.Diagnostics.Process.Start(psi);
                 }
-                if(Directory.Exists(SelectedResult.Path))
+                if (Directory.Exists(SelectedResult.Path))
                 {
                     System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe");
-                    psi.Arguments = $"{SelectedResult.Path}"; 
+                    psi.Arguments = $"{SelectedResult.Path}";
                     System.Diagnostics.Process.Start(psi);
                 }
             }));
@@ -111,120 +113,125 @@ namespace DesktopTimer.Models.Everything
         #region methods
 
         private CancellationTokenSource? searchCanceller = null;
-        private object searchLock = new object(); // 用于锁定操作
+        private object searchLock = new object();
 
-        private const int PageSize = 15; // 每页显示的结果数
-        private int currentPage = 0;     // 当前页码
-      
-        Dictionary<string,IAsyncEnumerable<Result?>> everythingSearchCache = new 
-            Dictionary<string, IAsyncEnumerable<Result?>>();
+        private const int PageSize = 15;
+        private int currentPage = 0;
 
-        public async void LoadMoreResults()
+        ConcurrentDictionary<string, IEnumerable<Result?>> everythingSearchCache = new
+            ConcurrentDictionary<string, IEnumerable<Result?>>();
+
+        bool HasOneLoadedAct = false;
+        public void LoadMoreResults(string curSKey)
         {
+            if (HasOneLoadedAct)
+                return;
+            HasOneLoadedAct = true;
+
             Stopwatch sp = new Stopwatch();
             sp.Start();
-            if(!everythingSearchCache.ContainsKey(SearchKey))
-            {
-                everythingSearchCache.Add(SearchKey, Everything.SearchAsync(SearchKey,CancellationToken.None));
-            }
-            var resultInUse = everythingSearchCache[SearchKey];
             try
             {
-                int skipCount = currentPage * PageSize;
-                int loadCount = 0;
-                await foreach (var result in resultInUse)
+                var curKey = $"{curSKey}_{currentPage}";
+                if (!everythingSearchCache.ContainsKey(curKey))
                 {
-
-                    if(0<=(skipCount--))
-                        continue;
-                    if (result != null)
-                    {
-                        loadCount++;
-                        _ = Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            CurrentResults?.Add(result);
-                        });
-                    }
-                    if(loadCount>=PageSize)
-                    {
-                        currentPage++;
-                        break;
-                    }
+                    everythingSearchCache.TryAdd(curKey, Everything.SearchWithPaging(curSKey, PageSize));
                 }
 
-                Trace.WriteLine($"Loaded {PageSize} results");
+                var resultInUse = everythingSearchCache[curKey];
+
+                int skipCount = (currentPage) * PageSize;
+                resultInUse.Skip(skipCount).Take(PageSize).ToList().ForEach((result) =>
+                {
+                    if (result != null)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            if(!CurrentResults.Contains(result))
+                            {
+                                CurrentResults?.Add(result);
+                            }
+                        });
+                    }
+                });
+                Trace.WriteLine($"Loaded {PageSize} results,current page:{currentPage++}");
             }
             catch (OperationCanceledException)
             {
                 Trace.WriteLine("Search operation was canceled.");
             }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Exception occurred: {ex}");
+            }
+            finally
+            {
+                HasOneLoadedAct = false;
+            }
             sp.Stop();
-            Trace.WriteLine($"Search spend {sp.ElapsedMilliseconds}ms");
+            Trace.WriteLine($"Search completed in {sp.ElapsedMilliseconds}ms");
         }
 
-        public void PerformSearch(string searchKey,int debounceDelay = 300)
+        public void PerformSearch(string searchKey)
         {
             if (string.IsNullOrEmpty(searchKey))
                 return;
-            currentPage = 0;
-            // 如果有进行中的搜索任务，取消它
+
+            currentPage = 0; // 重置页码
             lock (searchLock)
             {
+                // 清除上次的搜索
                 if (searchCanceller != null)
                 {
                     searchCanceller.Cancel();
                     searchCanceller.Dispose();
-                    ShouldOpenFlyouts =false;
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CurrentResults?.Clear();
-                    });
                 }
-
+                ShouldOpenFlyouts = false;
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CurrentResults?.Clear();
+                });
+                // 新建 CancellationTokenSource，虽然这里同步，但保留逻辑可以方便未来扩展
                 searchCanceller = new CancellationTokenSource();
             }
 
-            var token = searchCanceller.Token;
-
-            // 延迟执行搜索任务，防止每次输入都触发
-            Task.Delay(debounceDelay).ContinueWith(_ =>
+            try
             {
-                if (token.IsCancellationRequested)
-                    return;
-
-                try
+                if (searchCanceller?.IsCancellationRequested == false)
                 {
-                    // 开始搜索操作
-
-                    if (!token.IsCancellationRequested)
+                    // 执行搜索
+                    LoadMoreResults(SearchKey);
+                    SelectedResult = null;
+                    ShouldOpenFlyouts = true;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Trace.WriteLine("Search operation was canceled.");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Search error: {ex}");
+            }
+            finally
+            {
+                // 清理资源
+                lock (searchLock)
+                {
+                    if (searchCanceller != null && !searchCanceller.IsCancellationRequested)
                     {
-                        // 更新搜索结果
-                        LoadMoreResults();
-                        SelectedResult = null;
-                        ShouldOpenFlyouts = true;
+                        searchCanceller = null;
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    // 搜索操作被取消
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine(ex);
-                }
-                finally
-                {
-                    lock (searchLock)
-                    {
-                        if (searchCanceller?.Token == token)
-                        {
-                            searchCanceller = null;
-                        }
-                    }
-                }
-            }, token);
+            }
         }
 
+
+
+        public void RequestForLoadMoreResults()
+        {
+            LoadMoreResults(SearchKey);
+        }
         public void CancelAll()
         {
             searchCanceller?.Cancel();

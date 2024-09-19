@@ -132,11 +132,11 @@ namespace DesktopTimer.Models.BackgroundWorkingModel.Definations
                   try
                   {
                       Models = await SDAPI.GetModels(RequestUrl);
-                      selectedModel = Models.FirstOrDefault();
+                      selectedModel = Models?.FirstOrDefault();
                       OnPropertyChanged("SelectedModel");
 
                       Samplers = await SDAPI.GetSamplers(RequestUrl);
-                      SelectedSampler = Samplers.FirstOrDefault();
+                      SelectedSampler = Samplers?.FirstOrDefault();
 
                       
                       SDPresets = JsonSerializer.Deserialize<List<SDPresets>>(FileMapper.StableDiffusionPresetFile.ReadText());

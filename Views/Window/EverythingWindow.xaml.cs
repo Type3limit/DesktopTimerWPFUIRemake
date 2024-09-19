@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace DesktopTimer.Views.Window
 {
@@ -29,6 +30,8 @@ namespace DesktopTimer.Views.Window
             private set => isClosed = value;
         }
 
+        private DispatcherTimer _searchDelayTimer;
+
         EverythingWrapper? viewModel;
         public EverythingWindow()
         {
@@ -38,8 +41,19 @@ namespace DesktopTimer.Views.Window
             InPutText.Focus();
             Loaded += EverythingWindow_Loaded;
 
-        }
 
+            _searchDelayTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(600)
+            };
+            _searchDelayTimer.Tick += SearchDelayTimer_Tick;
+        }
+        private void SearchDelayTimer_Tick(object? sender, EventArgs e)
+        {
+            // 当定时器触发时停止计时，并执行搜索
+            _searchDelayTimer.Stop();
+            viewModel?.StartSearchCommand?.Execute(null);
+        }
         private ScrollViewer GetScrollViewerFromListBox(ListBox listBox)
         {
             if (listBox == null)
@@ -124,6 +138,17 @@ namespace DesktopTimer.Views.Window
             }
         }
 
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // 每次输入时重置定时器
+            if (_searchDelayTimer.IsEnabled)
+            {
+                _searchDelayTimer.Stop();
+            }
+
+            _searchDelayTimer.Start();
+        }
+
         bool IsInClose = false;
 
         public void WindowClose()
@@ -150,7 +175,7 @@ namespace DesktopTimer.Views.Window
             {
                 if (e.VerticalOffset + e.ViewportHeight >= (e.ExtentHeight - 10))
                 {
-                    Task.Run(()=>viewModel.LoadMoreResults());
+                    Task.Run(()=>viewModel?.RequestForLoadMoreResults());
                 }
             }
           

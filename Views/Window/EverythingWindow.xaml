@@ -80,13 +80,8 @@
                 FontSize="22"
                 Foreground="White"
                 PreviewKeyDown="TextBox_KeyDown"
-                Text="{Binding SearchKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                <ia:Interaction.Triggers>
-                    <ia:EventTrigger EventName="TextChanged">
-                        <ia:InvokeCommandAction Command="{Binding StartSearchCommand}" />
-                    </ia:EventTrigger>
-                </ia:Interaction.Triggers>
-            </TextBox>
+                Text="{Binding SearchKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                TextChanged="TextBox_TextChanged" />
             <ui:Flyout
                 Grid.Row="1"
                 MaxHeight="500"

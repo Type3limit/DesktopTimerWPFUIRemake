@@ -19,7 +19,7 @@ using DesktopTimer.Models.ChatRoom.Defination;
 
 namespace DesktopTimer.Models
 {
-    public partial class LocalConfig : ObservableObject
+    public partial class LocalConfig : ObservableObject 
     {
 
         #region properties
@@ -34,10 +34,6 @@ namespace DesktopTimer.Models
         TranslateConfig translateConfigData = new TranslateConfig();
 
 
-        #region chat room
-        [ObservableProperty]
-        UserInfo chatRoomCurrentUserInfo = new UserInfo();
-        #endregion
         
         #endregion
 
@@ -326,12 +322,16 @@ namespace DesktopTimer.Models
 
     public class UserSetting : ObservableObject
     {
+        public string? ChatNickName { set;get;}
+        public string? UserAvatarPath { set;get;}
         public string? LocalPictureLoadPath { set; get; }
         public string? LocalVideoLoadPath { set; get; }
         public string? LastPlayedVideo { set;get;}
         public TimeSpan? LastVideoPosition { set;get;}
         public string? LastOpenedWebUrl { set;get;}
         public Type? LastRequestBaseType { set; get; } = null;
+
+
     }
 
     public class ProgramSetting : ObservableObject
@@ -651,4 +651,6 @@ namespace DesktopTimer.Models
         [ObservableProperty]
         string youdaoTranslateUrl = "https://openapi.youdao.com/api";
     }
+
+  
 }

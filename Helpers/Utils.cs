@@ -21,6 +21,7 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using Expression = System.Linq.Expressions.Expression;
+using System.IO.Compression;
 
 namespace DesktopTimer.Helpers
 {
@@ -429,6 +430,41 @@ namespace DesktopTimer.Helpers
                 return fileInfo.Length;
             }
             return temp;
+        }
+
+        /// <summary>
+        /// compress with brotli
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string CompressBrotli(this string input)
+        {
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            using (MemoryStream output = new MemoryStream())
+            {
+                using (BrotliStream brotli = new BrotliStream(output, CompressionMode.Compress))
+                {
+                    brotli.Write(inputBytes, 0, inputBytes.Length);
+                }
+                return Convert.ToBase64String(output.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// decompress with brotli
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string DecompressBrotli(this string compressedInput)
+        {
+            byte[] compressedBytes = Convert.FromBase64String(compressedInput);
+            using (MemoryStream input = new MemoryStream(compressedBytes))
+            using (BrotliStream brotli = new BrotliStream(input, CompressionMode.Decompress))
+            using (MemoryStream output = new MemoryStream())
+            {
+                brotli.CopyTo(output);
+                return Encoding.UTF8.GetString(output.ToArray());
+            }
         }
 
         #endregion

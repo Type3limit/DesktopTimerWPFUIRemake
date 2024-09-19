@@ -189,50 +189,37 @@ namespace DesktopTimer.Models.Everything
         public static Process? EveryThingProcess = null;
 
 
-        public static IEnumerable<Result?> Search(string qry)
+        private static bool PerformQuery(string qry)
         {
-            if (EveryThingProcess == null)
-            {
-                yield return null;
-            }
-            // set the search
             Everything_SetSearchW(qry);
             Everything_SetRequestFlags(EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH | EVERYTHING_REQUEST_DATE_MODIFIED | EVERYTHING_REQUEST_SIZE);
             Everything_SetSort(EVERYTHING_SORT_DATE_RUN_DESCENDING);
-
-            // execute the query
-            if (Everything_QueryW(true))
-            {
-                // execute the query
-
-                var resultCount = Everything_GetNumResults();
-                Trace.WriteLine("exec once");
-                // loop through the results, generating result objects
-                for (uint i = 0; i < resultCount; i++)
-                {
-                    var sb = new StringBuilder(MaxSize);
-                    Everything_GetResultFullPathName(i, sb, MaxSize);
-                    Everything_GetResultDateModified(i, out long date_modified);
-                    Everything_GetResultSize(i, out long size);
-                    var curFileName = Marshal.PtrToStringUni(Everything_GetResultFileName(i));
-                    yield return new Result(sb.ToString())
-                    {
-                        DateModified = DateTime.FromFileTime(date_modified),
-                        Size = size,
-                        Filename = curFileName,
-                        RunCount = (int)Everything_IncRunCountFromFileName(curFileName)
-                    };
-                }
-            }
-            else
-            {
-                var code = Everything_GetLastError();
-                Trace.WriteLine($"Search failed with {code},{GetErrorDescribe((int)code)}");
-            }
-
+            return Everything_QueryW(true);
         }
 
-        public static async IAsyncEnumerable<Result?> SearchAsync(string qry, [EnumeratorCancellation] CancellationToken token)
+
+        private static Result? CreateResultFromIndex(uint index)
+        {
+            var sb = new StringBuilder(MaxSize);
+            Everything_GetResultFullPathName(index, sb, MaxSize);
+            Everything_GetResultDateModified(index, out long date_modified);
+            Everything_GetResultSize(index, out long size);
+            var ptr= Everything_GetResultFileName(index);
+            if(ptr==IntPtr.Zero)
+            {
+                return null;
+            }
+            var curFileName = Marshal.PtrToStringUni(ptr);
+
+            return new Result(sb.ToString())
+            {
+                DateModified = DateTime.FromFileTime(date_modified),
+                Size = size,
+                Filename = curFileName,
+                RunCount = (int)Everything_IncRunCountFromFileName(curFileName)
+            };
+        }
+        public static IEnumerable<Result?> SearchWithPaging(string qry, uint pageSize = 100)
         {
             if (EveryThingProcess == null)
             {
@@ -240,45 +227,88 @@ namespace DesktopTimer.Models.Everything
                 yield break;
             }
 
-            Everything_SetSearchW(qry);
-            Everything_SetRequestFlags(EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH | EVERYTHING_REQUEST_DATE_MODIFIED | EVERYTHING_REQUEST_SIZE);
-            Everything_SetSort(EVERYTHING_SORT_DATE_RUN_DESCENDING);
+            uint offset = 0;
+            bool moreResults = true;
 
-            if (Everything_QueryW(true))
+            while (moreResults)
             {
-                var resultCount = Everything_GetNumResults();
-                Trace.WriteLine("exec once");
+                // 设置分页
+                Everything_SetMax(pageSize);
+                Everything_SetOffset(offset);
 
-                for (uint i = 0; i < resultCount; i++)
+                if (PerformQuery(qry))
                 {
-                    if (token.IsCancellationRequested)
-                        yield break;
+                    var resultCount = Everything_GetNumResults();
+                    Trace.WriteLine($"Fetched {resultCount} results starting from {offset}");
 
-                    var sb = new StringBuilder(MaxSize);
-                    Everything_GetResultFullPathName(i, sb, MaxSize);
-                    Everything_GetResultDateModified(i, out long date_modified);
-                    Everything_GetResultSize(i, out long size);
-                    var curFileName = Marshal.PtrToStringUni(Everything_GetResultFileName(i));
-
-                    var result = new Result(sb.ToString())
+                    if (resultCount < pageSize)
                     {
-                        DateModified = DateTime.FromFileTime(date_modified),
-                        Size = size,
-                        Filename = curFileName,
-                        RunCount = (int)Everything_IncRunCountFromFileName(curFileName)
-                    };
+                        moreResults = false; // 最后一页，停止查询
+                    }
 
-                    yield return result;
+                    for (uint i = 0; i < resultCount; i++)
+                    {
+                        yield return CreateResultFromIndex(i);
+                    }
+
+                    offset += (uint)pageSize; // 更新偏移量
+                }
+                else
+                {
+                    var code = Everything_GetLastError();
+                    Trace.WriteLine($"Search failed with {code},{GetErrorDescribe((int)code)}");
+                    yield break;
                 }
             }
-            else
+        }
+        public static async IAsyncEnumerable<Result?> SearchWithPagingAsync([EnumeratorCancellation] CancellationToken token,string qry,uint pageSize = 100)
+        {
+            if (EveryThingProcess == null)
             {
-                var code = Everything_GetLastError();
-                Trace.WriteLine($"Search failed with {code},{GetErrorDescribe((int)code)}");
+                yield return null;
+                yield break;
+            }
+
+            uint offset = 0;
+            bool moreResults = true;
+
+            while (moreResults)
+            {
+                if (token.IsCancellationRequested)
+                    yield break;
+
+                // 设置分页
+                Everything_SetMax(pageSize);
+                Everything_SetOffset(offset);
+
+                if (PerformQuery(qry))
+                {
+                    var resultCount = Everything_GetNumResults();
+                    Trace.WriteLine($"Fetched {resultCount} results starting from {offset}");
+
+                    if (resultCount < pageSize)
+                    {
+                        moreResults = false; // 最后一页，停止查询
+                    }
+
+                    for (uint i = 0; i < resultCount; i++)
+                    {
+                        if (token.IsCancellationRequested)
+                            yield break;
+
+                        yield return CreateResultFromIndex(i);
+                    }
+
+                    offset += (uint)pageSize; // 更新偏移量
+                }
+                else
+                {
+                    var code = Everything_GetLastError();
+                    Trace.WriteLine($"Search failed with {code},{GetErrorDescribe((int)code)}");
+                    yield break;
+                }
             }
         }
-
-
 
 
         public static bool StartEverythingApp()
@@ -410,7 +440,8 @@ namespace DesktopTimer.Models.Everything
         }
 
         public override string ToString()
-            => $"Name: {Filename}\tSize (B): {(Folder ? "(Folder)" : Size)}\tModified: {DateModified:d}\tPath: {Path.Substring(0, 15)}...";
+            => $"Name: {Filename}\tSize (B): {(Folder ? "(Folder)" : Size)}\tModified: {DateModified:d}\t" +
+            $"Path: {Path}...";
     }
 
     public static class DefaultIcons
