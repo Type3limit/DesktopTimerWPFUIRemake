@@ -467,6 +467,39 @@ namespace DesktopTimer.Helpers
             }
         }
 
+        /// <summary>
+        /// convert file to base64 string
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public async static Task<string> ConvertFileToBase64(this string filePath)
+        {
+            if(!filePath.IsFileExist())
+                return string.Empty;
+            Byte[] bytes = await File.ReadAllBytesAsync("path");
+            return Convert.ToBase64String(bytes);
+        }
+        /// <summary>
+        /// read base64 as file
+        /// </summary>
+        /// <param name="base64"></param>
+        /// <param name="filePath"></param>
+        public async static void FileFromBase64(this string base64,string filePath)
+        {
+            Byte[] bytes = Convert.FromBase64String(base64);
+            await File.WriteAllBytesAsync(filePath, bytes);
+        }
+        /// <summary>
+        /// read image from base64
+        /// </summary>
+        /// <param name="base64"></param>
+        /// <returns></returns>
+        public static Image? ImageFromBase64(this string base64)
+        {
+            if(base64.IsNullOrEmpty())
+                return null;
+            return Image.FromStream(new MemoryStream(Convert.FromBase64String(base64)));
+        }
         #endregion
 
 
@@ -1330,8 +1363,6 @@ namespace DesktopTimer.Helpers
 
 
         }
-
-
 
         [DllImport("Shell32.dll")]
         private static extern IntPtr SHGetFileInfo

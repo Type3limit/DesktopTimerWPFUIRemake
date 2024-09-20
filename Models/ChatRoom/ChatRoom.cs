@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using DesktopTimer.Helpers;
 using DesktopTimer.Models.ChatRoom.Defination;
+using DesktopTimer.Models.ChatRoom.MessageHandler;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -18,7 +20,7 @@ namespace DesktopTimer.Models.ChatRoom
     public partial class ChatRoom : ObservableObject
     {
         #region Defination
-        public static string MESSAGE_REG_AND_LOGIN ="[Reg&Login]";
+
         #endregion
 
         #region properties
@@ -29,6 +31,9 @@ namespace DesktopTimer.Models.ChatRoom
 
         [ObservableProperty]
         string curIpAddress = "";
+
+        CancellationTokenSource ListenningCanceller = new CancellationTokenSource();
+
         #endregion
 
 
@@ -38,9 +43,13 @@ namespace DesktopTimer.Models.ChatRoom
         {
             curModelInstance = modelInstance;
 
-            WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, (o, e) =>
+            MessageHandlerFactory.LoadAllHandlers();
+
+            WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, async(o, e) =>
             {
                 CurIpAddress = GetIpAddress();
+
+                await StartMessageListenning();
 
                 RegisterForAllUser();
 
@@ -74,15 +83,7 @@ namespace DesktopTimer.Models.ChatRoom
         }
 
 
-        ChatMessageBase GetMessageContent(MessageTypeEnum curMessageType= MessageTypeEnum.TextType)
-        {
-            return new ChatMessageBase()
-            {
-                IpAdress = CurIpAddress,
-                MessageType = curMessageType
-            };
-        }
-
+        ChatMessageBase GetMessageContent() => new ChatMessageBase(){IpAddress = CurIpAddress};
 
         async Task<int> SendMessage(ChatMessageBase messageToSend, IPEndPoint endPoint)
         {
@@ -94,7 +95,7 @@ namespace DesktopTimer.Models.ChatRoom
 
                 var byteSend = await udpClient.SendAsync(sendBuffer, sendBuffer.Length, endPoint);
 
-                Trace.WriteLine($"Broadcast message sent: [\n{sendStr}\n]");
+                Trace.WriteLine($"Message sent: [\n{sendStr}\n]");
 
                 return byteSend;
             }
@@ -118,13 +119,30 @@ namespace DesktopTimer.Models.ChatRoom
 
                 Trace.WriteLine("Start Listening LAN Message...");
 
-                while (true)
+                while (!ListenningCanceller.IsCancellationRequested)
                 {
-                    UdpReceiveResult result = await udpClient.ReceiveAsync();  
+                    UdpReceiveResult result = await udpClient.ReceiveAsync(ListenningCanceller.Token);  
 
                     string receivedMessage = Encoding.UTF8.GetString(result.Buffer);
 
-                    
+                    var curContent = JsonSerializer.Deserialize<ChatMessageBase>(receivedMessage);
+
+                    if(curContent==null)
+                    {
+                        Trace.WriteLine($"unreadable message recived : {receivedMessage}");
+                        continue;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            MessageHandlerFactory.GetHandler(curContent?.Payload?.PayloadHeader)?.HandleMessage(curContent);
+                        }
+                        catch (Exception nex)
+                        {
+                            Trace.WriteLine(nex);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -132,6 +150,11 @@ namespace DesktopTimer.Models.ChatRoom
                 Trace.WriteLine(ex);
             }
 
+        }
+
+        public void StopMessageListenning()
+        {
+            ListenningCanceller.Cancel();
         }
 
 
@@ -147,12 +170,17 @@ namespace DesktopTimer.Models.ChatRoom
 
             var messageToSend = GetMessageContent();
 
-            messageToSend.Payload= new UserInfo()
+            var curInfo = new UserInfo()
             {
-                PayloadHeader = MESSAGE_REG_AND_LOGIN,
+                PayloadHeader = MessagePayload.MESSAGE_REG_AND_LOGIN,
                 NickName = curModelInstance.Config.UserConfigData.ChatNickName,
-                AvatarUrl = curModelInstance.Config.UserConfigData.UserAvatarPath,
             };
+            if(curModelInstance.Config.UserConfigData.UserAvatarPath.IsFileExist())
+            {
+                var curBase64Str = await curModelInstance.Config.UserConfigData.UserAvatarPath.ConvertFileToBase64();
+                curInfo.Avater = curBase64Str.CompressBrotli();
+            }
+            messageToSend.Payload = curInfo;
             await SendMessage(messageToSend,endPoint);
         }
         #endregion

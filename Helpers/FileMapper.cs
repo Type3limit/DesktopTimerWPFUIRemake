@@ -351,6 +351,27 @@ namespace DesktopTimer.Helpers
                 return file;
             }
         }
+
+
+        #region dbFile
+
+        /// <summary>
+        /// Chat User Info
+        /// </summary>
+        public static string ChatRoomUserInfoDBFile
+        {
+            get
+            {
+                var file = ChatRoomDir.PathCombine("ChatUserInfo.db");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+
+        #endregion
         #endregion
     }
 

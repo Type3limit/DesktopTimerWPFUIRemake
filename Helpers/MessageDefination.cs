@@ -1,4 +1,5 @@
 ﻿using DesktopTimer.Models.BackgroundWorkingModel.Definations;
+using DesktopTimer.Models.ChatRoom.Defination;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,10 @@ namespace DesktopTimer.Helpers
             protected set=> _value = value;
         }
     }
+
+
+    #region views
+   
     /// <summary>
     /// To request open setting
     /// </summary>
@@ -208,5 +213,23 @@ namespace DesktopTimer.Helpers
 
     public class RequestOpenEverythingWindow : TypedMessage<object>
     { }
+    #endregion
 
+    #region chat room
+    public class UpdateContactListMessage : TypedMessage<ChatMessageBase>
+    {
+        public UpdateContactListMessage(ChatMessageBase chatMessage)
+        {
+            Value = chatMessage;
+        }
+    }
+
+    public class UpdateAliveStatusMessage : TypedMessage<ChatMessageBase>
+    {
+        public UpdateAliveStatusMessage(ChatMessageBase chatMessage)
+        {
+            Value = chatMessage;
+        }
+    }
+    #endregion
 }
