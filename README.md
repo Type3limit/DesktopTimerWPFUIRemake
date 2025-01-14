@@ -19,4 +19,4 @@
  
 
 ## 效果预览
-  ![预览](./images/preview.GIF)
+  ![预览](./images/preview.gif)
