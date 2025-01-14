@@ -19,22 +19,4 @@
  
 
 ## 效果预览
-
-- 常规图片背景：
-  ![常规](./images/normal.png)
-
-- 右键:
-  ![右键](./images/rightButton.png)
-
-- 设置：
-  ![设置：](./images/setting.png)
-
-- 翻译：
-  ![翻译](./images/translateWindow.gif)
-
-- 音频可视化：
-  ![音频可视化：](./images/audioVisual.gif)
-
-- 网页背景：
-  ```[时间区可以通过快捷键隐藏]```
-  ![网页背景：](./images/webView.gif)
+  ![预览](./images/preview.GIF)
