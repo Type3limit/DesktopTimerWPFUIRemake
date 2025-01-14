@@ -231,5 +231,13 @@ namespace DesktopTimer.Helpers
             Value = chatMessage;
         }
     }
+
+    public class RequestSendChatMessage:TypedMessage<ChatMessageBase>
+    {
+        public RequestSendChatMessage(ChatMessageBase message)
+        {
+            Value = message;
+        }   
+    }
     #endregion
 }

@@ -62,7 +62,7 @@ namespace DesktopTimer.Models.ChatRoom
 
         #region base
 
-        public string GetIpAddress(bool ipV6 = false)
+        public static string GetIpAddress(bool ipV6 = false)
         {
             string ipAddress = "";
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -82,13 +82,12 @@ namespace DesktopTimer.Models.ChatRoom
             return ipAddress;
         }
 
-
-        ChatMessageBase GetMessageContent() => new ChatMessageBase(){IpAddress = CurIpAddress};
-
-        async Task<int> SendMessage(ChatMessageBase messageToSend, IPEndPoint endPoint)
+        public async Task<int> SendMessage(ChatMessageBase messageToSend, IPEndPoint endPoint)
         {
             try
             {
+                messageToSend.IpAddress = CurIpAddress;
+
                 var sendStr = JsonSerializer.Serialize(messageToSend);
 
                 byte[] sendBuffer = Encoding.UTF8.GetBytes(sendStr);
@@ -168,7 +167,7 @@ namespace DesktopTimer.Models.ChatRoom
 
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Broadcast, Port);
 
-            var messageToSend = GetMessageContent();
+            var messageToSend = new ChatMessageBase();
 
             var curInfo = new UserInfo()
             {

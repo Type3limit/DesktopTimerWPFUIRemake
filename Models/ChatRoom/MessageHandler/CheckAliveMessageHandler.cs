@@ -1,4 +1,6 @@
-﻿using DesktopTimer.Models.ChatRoom.Defination;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using DesktopTimer.Helpers;
+using DesktopTimer.Models.ChatRoom.Defination;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,26 +25,21 @@ namespace DesktopTimer.Models.ChatRoom.MessageHandler
                 {
                     if(payload.Direction>0)//send to here
                     {
-                        SendMessage();
+                        WeakReferenceMessenger.Default.Send(new RequestSendChatMessage(curMessage));
                     }
                     else if(payload.Direction<0)  //other client reply
                     {
-
+                        WeakReferenceMessenger.Default.Send(new UpdateAliveStatusMessage(curMessage));
                     }
                 }
                 return false;
             }
             catch(Exception ex)
             {
-                Trace.WriteLine(ex);
+                Trace.WriteLine(ex); 
                 return false;
             }
         
-        }
-
-        public bool SendMessage()
-        {
-            throw new NotImplementedException();
         }
     }
 }

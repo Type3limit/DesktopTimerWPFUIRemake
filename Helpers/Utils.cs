@@ -22,6 +22,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using Expression = System.Linq.Expressions.Expression;
 using System.IO.Compression;
+using Microsoft.Win32;
 
 namespace DesktopTimer.Helpers
 {
@@ -1475,6 +1476,81 @@ namespace DesktopTimer.Helpers
             return searchPatterns.AsParallel()
                    .SelectMany(searchPattern =>
                           Directory.EnumerateFiles(path, searchPattern, searchOption));
+        }
+    }
+
+
+    public static class AutoRunHelper
+    {
+        public static string RegistryAutoRunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+        /// <summary>
+        /// check if target app has auto run set
+        /// </summary>
+        /// <param name="appName"></param>
+        /// <param name="appPath"></param>
+        /// <returns></returns>
+        public static bool CheckIfHasSetAutoRun(string appName, string appPath)
+        {
+            RegistryKey rk = Registry.CurrentUser.OpenSubKey(RegistryAutoRunKey, true);
+            if (rk == null)
+            {
+                rk = Registry.CurrentUser.CreateSubKey(RegistryAutoRunKey);
+            }
+            return rk.GetValue(appName) != null;
+        }
+
+
+        public static void SetAutoRun(string appName, string appPath, bool autoRemove = true)
+        {
+            try
+            {
+                Trace.WriteLine("开始设置开机启动");
+                RegistryKey rk = Registry.CurrentUser.OpenSubKey(RegistryAutoRunKey, true);
+                if (rk == null)
+                {
+                    rk = Registry.CurrentUser.CreateSubKey(RegistryAutoRunKey);
+                }
+                if (rk.GetValue(appName) == null)
+                {
+                    rk.SetValue(appName, appPath);
+                    //MessageBoxHelper.ShowAsync("开机启动设置完成", "完成");
+                    Trace.WriteLine("设置开机启动完成");
+                }
+                else
+                {
+                    if (autoRemove)
+                    {
+
+                        RemoveAutoRun(appName);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+
+        }
+
+        public static void RemoveAutoRun(string appName)
+        {
+            try
+            {
+                RegistryKey rk = Registry.CurrentUser.OpenSubKey(RegistryAutoRunKey, true);
+                if (rk != null)
+                {
+                    rk.DeleteValue(appName, false);
+                }
+                Trace.WriteLine("开机启动已删除");
+                //MessageBoxHelper.ShowAsync("开机启动已删除", "完成");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+
         }
     }
 }

@@ -327,11 +327,11 @@ namespace DesktopTimer.Models.BackgroundWorkingModel
                 {
                     if (currentResponse == null)
                     {
-                        var query = SelectedRequestInstance.BuildQuery(!DisableAutoPageIncrease);
-                        currentResponse = await SelectedRequestInstance.Request(query);
+                        var query = SelectedRequestInstance?.BuildQuery(!DisableAutoPageIncrease);
+                        currentResponse = await SelectedRequestInstance?.Request(query);
                         if (currentResponse == null)
                             return;
-                        results = SelectedRequestInstance.ParseResult(currentResponse, RequestCanceller?.Token??CancellationToken.None);
+                        results = SelectedRequestInstance?.ParseResult(currentResponse, RequestCanceller?.Token??CancellationToken.None);
                         if (DisableAutoPageIncrease)
                             DisableAutoPageIncrease = false;
                     }

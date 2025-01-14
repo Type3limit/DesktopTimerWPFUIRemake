@@ -371,6 +371,19 @@ namespace DesktopTimer.Helpers
             }
         }
 
+        public static string DeepSeekInfoDBFile
+        {
+            get
+            {
+                var file = ChatRoomDir.PathCombine("DeepSeekInfo.db");
+                if (!file.IsFileExist())
+                {
+                    File.Create(file).Close();
+                }
+                return file;
+            }
+        }
+
         #endregion
         #endregion
     }

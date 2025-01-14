@@ -188,7 +188,7 @@ namespace DesktopTimer
 
         protected override void OnExit(ExitEventArgs e)
         {
-            dbCtrlHook.DisableHook();
+            dbCtrlHook?.DisableHook();
             Trace.WriteLine($"[{DateTime.Now.ToLocalTime().ToString("yyyy-MM-dd hh:mm:ss:fff")}]Application->Exit Start");
             TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
             base.OnExit(e);

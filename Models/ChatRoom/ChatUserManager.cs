@@ -14,6 +14,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LiteDB;
 using System.Windows.Forms;
+using System.Diagnostics;
+using System.Net.Sockets;
+using System.Text.Json;
+using System.Net;
 
 namespace DesktopTimer.Models.ChatRoom
 {
@@ -21,6 +25,9 @@ namespace DesktopTimer.Models.ChatRoom
     public partial class ChatUserManager : ObservableObject
     {
         #region properties
+
+
+        ChatRoom? chatRoomInstance = null;
 
         ObservableCollection<UserAppearance> users = new ObservableCollection<UserAppearance>();
         /// <summary>
@@ -33,14 +40,24 @@ namespace DesktopTimer.Models.ChatRoom
         }
 
 
-        LiteDatabase UserInfoDB = new LiteDatabase(FileMapper.ChatRoomUserInfoDBFile);
+        public LiteDatabase UserInfoDB = new LiteDatabase(FileMapper.ChatRoomUserInfoDBFile);
+
+
+        [ObservableProperty]
+        int updateContractListCount = 5;//every 5 seconds check alive
+
+        int CurrentContractUpdateCount = 0;
         #endregion
 
 
         #region constructor
 
-        public ChatUserManager()
+
+        public ChatUserManager(ChatRoom roomInstance)
         {
+
+            chatRoomInstance = roomInstance;
+
             WeakReferenceMessenger.Default.Register<UpdateContactListMessage>(this, (e, t) => UpdateContactList(t.Value));
 
             WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, (e, t) =>
@@ -63,6 +80,37 @@ namespace DesktopTimer.Models.ChatRoom
                   NickName = doc["NickName"].AsString,
                   IpAddress = doc["IPAddress"].AsString
               });
+
+
+            WeakReferenceMessenger.Default.Register<TimeUpdateMessage>(this, (e, t) =>
+            {
+                ++CurrentContractUpdateCount;
+                if (CurrentContractUpdateCount >= UpdateContractListCount)
+                {
+                    CurrentContractUpdateCount = 0;
+                    SendAliveCheck();
+                }
+            });
+
+            WeakReferenceMessenger.Default.Register<RequestSendChatMessage>(this, (e, t) => 
+            {
+                if(t?.Value?.Payload?.PayloadHeader == MessagePayload.MESSAGE_CHECK_ALIVE)
+                {
+                    ReplyAliveCheck(t.Value);
+                }
+            });
+
+            WeakReferenceMessenger.Default.Register<UpdateAliveStatusMessage>(this, (e, t) =>
+            {
+                if(t.Value!=null)
+                {
+                    var target = Users.FirstOrDefault(x => x.IpAddress == t.Value.IpAddress);
+                    if(target!=null)
+                    {
+                        target.Online = true;
+                    }
+                }
+            });
         }
 
 
@@ -74,21 +122,12 @@ namespace DesktopTimer.Models.ChatRoom
         #endregion
 
         #region methods
-        public UserAppearance? BuildFromMessage(ChatMessageBase? curMessage)
-        {
-            if (curMessage == null || !(curMessage.Payload is UserInfo curInfo))
-                return null;
 
-            return new UserAppearance()
-            {
-                AvatarOriginData = curInfo.Avater,
-                NickName = curInfo.NickName,
-                IpAddress = curMessage.IpAddress
-            };
-        }
-
-
-
+        #region userUpdate
+        /// <summary>
+        /// update info in database
+        /// </summary>
+        /// <param name="curInfo"></param>
         public void UpdateDBInfo(UserAppearance curInfo)
         {
             var collections = UserInfoDB.GetCollection<UserAppearance>("ChatUsers");
@@ -110,7 +149,10 @@ namespace DesktopTimer.Models.ChatRoom
             }
         }
 
-
+        /// <summary>
+        /// update user list when a chat message incoming.
+        /// </summary>
+        /// <param name="curMessage"></param>
         public void UpdateContactList(ChatMessageBase? curMessage)
         {
             if (curMessage == null ||
@@ -124,7 +166,7 @@ namespace DesktopTimer.Models.ChatRoom
                 return;
 
 
-            var appearance = BuildFromMessage(curMessage);
+            var appearance = BuildUserAppearanceFromMessage(curMessage);
             if (appearance == null)
                 return;
             UpdateDBInfo(appearance);
@@ -153,7 +195,9 @@ namespace DesktopTimer.Models.ChatRoom
             });
         }
 
-
+        /// <summary>
+        /// load users from data base
+        /// </summary>
         public void LoadContactListFromDB()
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -171,7 +215,85 @@ namespace DesktopTimer.Models.ChatRoom
                 });
             }
         }
+        #endregion
 
+        #region common
+
+        /// <summary>
+        /// build user appearance info from chat message
+        /// </summary>
+        /// <param name="curMessage"></param>
+        /// <returns></returns>
+        public UserAppearance? BuildUserAppearanceFromMessage(ChatMessageBase? curMessage)
+        {
+            if (curMessage == null || !(curMessage.Payload is UserInfo curInfo))
+                return null;
+
+            return new UserAppearance()
+            {
+                AvatarOriginData = curInfo.Avater,
+                NickName = curInfo.NickName,
+                IpAddress = curMessage.IpAddress
+            };
+        }
+
+        private void SendMessage(string ipAddress, ChatMessageBase replyMessage)
+        {
+            if (IPAddress.TryParse(ipAddress, out var curAddress))
+            {
+                IPEndPoint endPoint = new IPEndPoint(curAddress, chatRoomInstance?.Port ?? 52530);
+                _ = chatRoomInstance?.SendMessage(replyMessage, endPoint);
+            }
+        }
+
+        #endregion
+
+        #region Alive check
+        /// <summary>
+        /// check user list alive status
+        /// </summary>
+        public void SendAliveCheck()
+        {
+            foreach (var itr in Users)
+            {
+                SendAliveCheck(itr);
+                ++ itr.OfflineCount;
+                itr?.OnlineStatusChanged();
+            }
+        }
+        /// <summary>
+        /// check target user alive status
+        /// </summary>
+        /// <param name="target"></param>
+        public void SendAliveCheck(UserAppearance target)
+        {
+            if(target.IpAddress?.IsNullOrEmpty()!=false)
+                return;
+            var curMessage = new ChatMessageBase();
+            curMessage.Payload = new AliveCheck()
+            {
+                Direction = 1 // send to other
+            };
+            SendMessage (target.IpAddress,curMessage);
+        }
+
+        /// <summary>
+        /// reply alive check message
+        /// </summary>
+        /// <param name="curMessage"></param>
+        public void ReplyAliveCheck(ChatMessageBase curMessage)
+        {
+            if (curMessage?.IpAddress?.IsNullOrEmpty() != false)
+                return;
+            var replyMessage = new ChatMessageBase();
+            replyMessage.Payload = new AliveCheck()
+            {
+                Direction = -1 // reply
+            };
+            SendMessage(curMessage.IpAddress, replyMessage);
+        }
+
+        #endregion
 
         #endregion
     }
@@ -191,11 +313,32 @@ namespace DesktopTimer.Models.ChatRoom
         string? avatarOriginData;
 
         [ObservableProperty]
-        bool online = true;
+        int offlineCount = 0;
+        public bool Online
+        {
+            get => OfflineCount >= 2;
+            set
+            {
+                OfflineCount = value ? 2 : 0;
+            }
+        }
+
         public void LoadAvatar()
         {
+            try
+            {
 
-            UserAvatarImage = AvatarOriginData?.DecompressBrotli()?.ImageFromBase64()?.ToImageSource();
+                UserAvatarImage = AvatarOriginData?.DecompressBrotli()?.ImageFromBase64()?.ToImageSource();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+        }
+
+        public void OnlineStatusChanged()
+        {
+            OnPropertyChanged("Online");
         }
     }
     public static class ImageExtensions
@@ -218,7 +361,4 @@ namespace DesktopTimer.Models.ChatRoom
             }
         }
     }
-
-
-
 }

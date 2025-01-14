@@ -73,7 +73,11 @@ namespace DesktopTimer.Helpers
         public ThemeHelper()
         {
 
-            UpdateThemeBasedOnTime();
+
+            WeakReferenceMessenger.Default.Register<ConfigReadComplecateMessage>(this, (e, t) => 
+            {
+                UpdateThemeBasedOnTime();
+            });
 
             WeakReferenceMessenger.Default.Register<TimeUpdateMessage>(this, (e, t) =>
             {

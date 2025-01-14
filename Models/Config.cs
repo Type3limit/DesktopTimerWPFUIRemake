@@ -33,8 +33,6 @@ namespace DesktopTimer.Models
         [ObservableProperty]
         TranslateConfig translateConfigData = new TranslateConfig();
 
-
-        
         #endregion
 
 
@@ -331,7 +329,7 @@ namespace DesktopTimer.Models
         public string? LastOpenedWebUrl { set;get;}
         public Type? LastRequestBaseType { set; get; } = null;
 
-
+        public string DeepSeekApiAuthKey { set;get;}  = "";
     }
 
     public class ProgramSetting : ObservableObject
