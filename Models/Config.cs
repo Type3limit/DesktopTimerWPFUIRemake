@@ -328,8 +328,7 @@ namespace DesktopTimer.Models
         public TimeSpan? LastVideoPosition { set;get;}
         public string? LastOpenedWebUrl { set;get;}
         public Type? LastRequestBaseType { set; get; } = null;
-
-        public string DeepSeekApiAuthKey { set;get;}  = "";
+        public string DeepSeekApiAuthKey { set;get;}  = "sk-7a28beebc3d34c349f1a5717b800b2b4";
     }
 
     public class ProgramSetting : ObservableObject

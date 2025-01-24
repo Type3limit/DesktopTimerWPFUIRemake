@@ -42,6 +42,19 @@ namespace DesktopTimer.Helpers
                 return currentFile;
             }
         }
+
+        public static string ConversationTempDir
+        {
+            get
+            {
+#pragma warning disable CS8604 
+                string currentFile = Path.Combine(AppDomain.CurrentDomain?.SetupInformation?.ApplicationBase, "ConversationTemp");
+#pragma warning restore CS8604 
+                if (!Directory.Exists(currentFile))
+                    Directory.CreateDirectory(currentFile);
+                return currentFile;
+            }
+        }
         /// <summary>
         /// Chat room related files
         /// </summary>

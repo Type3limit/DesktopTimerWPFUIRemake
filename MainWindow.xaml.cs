@@ -35,6 +35,7 @@ namespace DesktopTimer
 
         static OptionsWindow? translateWindow = null;
         static EverythingWindow? everythingWindow = null;
+        static DeepSeekChatWindow? deepSeekWindow = null;
 
 
 
@@ -51,7 +52,7 @@ namespace DesktopTimer
             });
             WeakReferenceMessenger.Default.Register<RequestShowMainWindowMessage>(this, (o, e) =>
             {
-                Application.Current.Dispatcher.Invoke(() => 
+                Application.Current.Dispatcher.Invoke(() =>
                 {
                     Application.Current.MainWindow.Show();
                     Application.Current.MainWindow.Activate();
@@ -62,18 +63,19 @@ namespace DesktopTimer
             NavigationCommands.BrowseForward.InputGestures.Clear();
 
             (this.DataContext as MainWorkModel)?.SetShotKeyDiscribe(new List<HotKey>()
-            { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showTranslate, showEverything });
+            { hiddenKey, flashKey, setKey,
+                    hiddenTimerKey, showWebFlyOut,muteVideo,increaseVolume,decreaseVolume, showTranslate, showEverything,showDeepSeek });
 
         }
 
 
         private void MainWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if(e.NewValue is MainWorkModel mainModel)
+            if (e.NewValue is MainWorkModel mainModel)
             {
                 ModelInstance = mainModel;
                 ModelInstance?.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey,
-                    hiddenTimerKey, showWebFlyOut, muteVideo,increaseVolume,decreaseVolume,showTranslate, showEverything });
+                    hiddenTimerKey, showWebFlyOut, muteVideo,increaseVolume,decreaseVolume,showTranslate, showEverything,showDeepSeek });
             }
         }
 
@@ -81,19 +83,19 @@ namespace DesktopTimer
         {
             var TimerPage = new TimerPage();
             TimerPage.DataContext = this.DataContext;
-            TimerPage.MouseMoveHandler += TimerPage_MouseMoveHandler ;
+            TimerPage.MouseMoveHandler += TimerPage_MouseMoveHandler;
             ContentFrame.Navigate(TimerPage);
             windowInstance = this;
-            WeakReferenceMessenger.Default.Register<RequestOpenEverythingWindow>(this, (o, e) => 
+            WeakReferenceMessenger.Default.Register<RequestOpenEverythingWindow>(this, (o, e) =>
             {
                 OnShowEveryThingFlyOut();
             });
-            
+
         }
 
         private void TimerPage_MouseMoveHandler(MouseEventArgs e)
         {
-            if( Mouse.LeftButton == MouseButtonState.Pressed)
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
                 DragMove();
             }
@@ -121,9 +123,10 @@ namespace DesktopTimer
         HotKey hiddenTimerKey = new HotKey(Key.T, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
         HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "操作页显示\\隐藏");
         HotKey showTranslate = new HotKey(Key.Z, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnTranslate), "唤起翻译窗口");
-        HotKey showEverything = new HotKey(Key.E,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnShowEveryThingFlyOut),"唤起everything查询");
+        HotKey showEverything = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "唤起everything查询");
+        HotKey showDeepSeek = new HotKey(Key.D, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowDeepSeekWindow), "唤起deepSeek对话");
         HotKey muteVideo = new HotKey(Key.M, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnMute), "静音\\取消静音");
-        HotKey increaseVolume= new HotKey(Key.O, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeIncrease), "增加音量");
+        HotKey increaseVolume = new HotKey(Key.O, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeIncrease), "增加音量");
         HotKey decreaseVolume = new HotKey(Key.P, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnVolumeDecrease), "减少音量");
 
         static MainWindow windowInstance = null;
@@ -212,13 +215,13 @@ namespace DesktopTimer
             if (windowInstance?.DataContext is MainWorkModel mainWorkSpace
                 && mainWorkSpace.BackgroundImageRequest.IsVideoBackground)
             {
-                WeakReferenceMessenger.Default.Send(new VideoVolumeShortCutMessage( VolumeShortOption.Mute));
+                WeakReferenceMessenger.Default.Send(new VideoVolumeShortCutMessage(VolumeShortOption.Mute));
             }
         }
 
 
 
-      
+
 
         static public void OnVolumeIncrease(HotKey currentKey)
         {
@@ -273,10 +276,25 @@ namespace DesktopTimer
             }
         }
 
+        static public void OnShowDeepSeekWindow(HotKey hotKey)
+        {
+            if (deepSeekWindow != null)
+            {
+                deepSeekWindow?.Close();
+                deepSeekWindow = null;
+            }
+
+            deepSeekWindow = new DeepSeekChatWindow();
+            deepSeekWindow.DataContext = (windowInstance.DataContext as MainWorkModel)?.DeepSeekModel;
+            deepSeekWindow.Show();
+            deepSeekWindow.Activate();
+            deepSeekWindow.Focus();
+        }
+
         private void PositionSlider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var slider = sender as Slider;
-            if(slider==null)
+            if (slider == null)
                 return;
             // 获取鼠标点击的相对位置
             var position = e.GetPosition(slider);

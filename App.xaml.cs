@@ -14,6 +14,9 @@ using System.Windows.Media;
 
 namespace DesktopTimer
 {
+
+
+
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -98,6 +101,9 @@ namespace DesktopTimer
 
                 AddTraceListener();
 
+
+                ClearTempDir();
+
                 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
 
@@ -120,6 +126,22 @@ namespace DesktopTimer
                 }
                 Application.Current.Shutdown();
             }
+        }
+
+        private void ClearTempDir()
+        {
+            try
+            {
+                if (FileMapper.ConversationTempDir.IsDirctoryExist())
+                {
+                    Directory.Delete(FileMapper.ConversationTempDir, true);
+                }
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+
         }
 
         private static void DeleteCefBrowserCache()

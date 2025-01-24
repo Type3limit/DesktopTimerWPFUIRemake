@@ -9,6 +9,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
 
+                <ResourceDictionary Source="pack://application:,,,/;component/Views/Styles/MarkdownStyles.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
                 <!--  Theme setting  -->
@@ -16,6 +17,7 @@
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
+            <!--  App.xaml  -->
 
 
             <FontFamily x:Key="dig">

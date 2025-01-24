@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using ControlzEx.Standard;
 using DesktopTimer.Helpers;
+using DesktopTimer.Models.ChatRoom.Defination;
+using FFmpeg.AutoGen;
 using Flurl.Http;
 using LiteDB;
 using System;
@@ -15,113 +18,428 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DesktopTimer.Models.DeepSeek
 {
-    public partial class DeepSeek : ObservableObject
+    public class DeepSeekException : Exception
     {
-        #region data
+        public int StatusCode { get; }
+        public string ErrorType { get; }
+
+        public DeepSeekException(int code, string type, string message)
+            : base(message)
+        {
+            StatusCode = code;
+            ErrorType = type;
+        }
+    }
+
+    public partial class DeepSeek : ObservableObject, IDisposable
+    {
+        #region Constants
+        private const int MaxContextLength = 32768;
+        #endregion
+
+        #region Data
         public static string APIUrl = @"https://api.deepseek.com/v1/chat/completions";
 
-
-        CancellationTokenSource? requestCanceller = null;
-
-        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0, 1);
-
-        public LiteDatabase UserInfoDB = new LiteDatabase(FileMapper.DeepSeekInfoDBFile);
-
-        #endregion
-
-        #region properties
-
-        [ObservableProperty]
-        ObservableCollection<MessageContent> currentConversations = new ObservableCollection<MessageContent>();
-
-        [ObservableProperty]
-        ObservableCollection<string> historyConversations = new ObservableCollection<string>();
+        private CancellationTokenSource? _requestCanceller;
+        private readonly LiteDatabase _userInfoDb = new(FileMapper.DeepSeekInfoDBFile);
 
 
-        [ObservableProperty]
-        MessageContent currentInputingContent = new MessageContent()
+        private DeepSeekConfig _config;
+        public DeepSeekConfig Config
         {
-            Role = "user"
-        };
-
-        [ObservableProperty]
-        MessageContent currentResponseContent = new MessageContent()
-        {
-            Role ="system"
-        };
-
-        [ObservableProperty]
-        int maxToken = 2048;
-
-        bool IsRequestStarted
-        {
-            get=>requestCanceller!=null;
-        }
-        #endregion
-
-        MainWorkModel? currentModelInsatnce;
-
-        public DeepSeek(MainWorkModel mainWorkModelInstance) 
-        {
-            currentModelInsatnce = mainWorkModelInstance;
-            
-        }
-
-        #region command 
-
-        ICommand? startCompletionsCommand = null;
-        public ICommand StartCompletionsCommand
-        {
-            get => startCompletionsCommand ?? (startCompletionsCommand = new RelayCommand(() =>
+            get => _config;
+            set
             {
-                try
-                {
-                    if(requestCanceller!=null)
-                    {
-                        CancelCurrentRequest();
-                    }
-                    else
-                    {
-
-                        SendRequest(CurrentInputingContent);
-                    }
-                }
-                catch(Exception ex)
-                {
-                    Trace.WriteLine(ex);
-                }
-            }));
-        }
-
-
-        ICommand? startNewConversationCommand = null;
-        public ICommand StartNewConversationCommand
-        {
-            get=>startNewConversationCommand??(startNewConversationCommand = new RelayCommand(() => 
-            {
-                SaveAndClearConversations();
-            }));
+                OnPropertyChanged("Config");
+            }
         }
         #endregion
 
+        #region Properties
+        [ObservableProperty]
+        private ObservableCollection<MessageContent> _currentConversations = new();
 
-        #region methods
+        [ObservableProperty]
+        private List<Dictionary<string, List<MessageContent>>> _historyConversations = new();
+
+
+        private Dictionary<string, List<MessageContent>>? _selectedHistory = null;
+        public Dictionary<string, List<MessageContent>>? SelectedHistory
+        {
+            get => _selectedHistory;
+            set
+            {
+                if (value != _selectedHistory)
+                {
+                    SetProperty(ref _selectedHistory, value);
+                    OnHistorySelected();
+                }
+
+            }
+        }
+
+
+        private MessageContent _currentInputingContent = null;
+        public MessageContent CurrentInputingContent
+        {
+            get => _currentInputingContent ?? (_currentInputingContent = new MessageContent(this) { Role = "user" });
+            set => SetProperty(ref _currentInputingContent, value);
+        }
+
+
+        private MessageContent _currentResponseContent = null;
+        public MessageContent CurrentResponseContent
+        {
+            get => _currentResponseContent ?? (_currentResponseContent = new MessageContent(this) { Role = "assistant" });
+            set => SetProperty(ref _currentResponseContent, value);
+        }
+
+        [ObservableProperty]
+        private int _maxToken = 2048;
+
+
+
+        public bool IsRequestStarted => _requestCanceller != null;
+
+
+        MainWorkModel? CurrentModelInstance = null;
+
+        #endregion
+
+        #region Constructor
+        public DeepSeek(MainWorkModel mainWorkModel, DeepSeekConfig config)
+        {
+            _config = config ?? new DeepSeekConfig();
+            CurrentModelInstance = mainWorkModel;
+        }
+        #endregion
+
+        #region Commands
+        [RelayCommand]
+        public async void StartCompletions()
+        {
+            try
+            {
+                if (IsRequestStarted)
+                {
+                    CancelCurrentRequest();
+                }
+                else
+                {
+                    _ = Task.Run(() =>
+                    {
+                        _ = SendRequestAsync(CurrentInputingContent);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"请求启动失败: {ex}");
+            }
+        }
+
+        [RelayCommand]
+        public void StartNewConversation()
+        {
+            SaveAndClearConversations();
+        }
+        #endregion
+
+        #region Core Methods
+        private DSRequestBody BuildRequest(MessageContent input)
+        {
+            var messages = TrimContext(CurrentConversations.ToList());
+            messages.Add(input);
+
+            return new DSRequestBody
+            {
+                Messages = messages,
+                Model = _config.Model,
+                MaxTokens = MaxToken,
+                Temperature = _config.Temperature,
+                Stream = true,
+                Stop = "DesktopTimerForceStoped"
+            };
+        }
+        private const int ReadBufferSize = 4096;
+        private readonly StringBuilder _dataBuffer = new();
+        private readonly JsonDocumentOptions _jsonOptions = new()
+        {
+            AllowTrailingCommas = true,
+            CommentHandling = JsonCommentHandling.Skip
+        };
+        public async Task SendRequestAsync(MessageContent input)
+        {
+            if (IsRequestStarted) return;
+
+            try
+            {
+                _requestCanceller = new CancellationTokenSource();
+                OnPropertyChanged(nameof(IsRequestStarted));
+                CurrentResponseContent = null;
+                // 先添加用户消息
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    SaveConversation(new MessageContent(input));
+
+                    // 初始化助手的响应消息
+                    CurrentResponseContent = new MessageContent(this)
+                    {
+                        Role = "assistant",
+                        Content = ""
+                    };
+                    CurrentConversations.Add(CurrentResponseContent);
+                });
+                input.Content = "";
+                // 构建请求
+                var request = BuildRequest(input);
+                var token = CurrentModelInstance?.Config.UserConfigData.DeepSeekApiAuthKey;
+
+                // 发送请求
+                using var response = await APIUrl
+                    .WithOAuthBearerToken(token)
+                    .WithHeader("Content-Type", "application/json")
+                    .PostJsonAsync(request, cancellationToken: _requestCanceller.Token)
+                    .ReceiveStream();
+
+                // 处理响应流
+                await ProcessResponseStream(
+                    response,
+                    _requestCanceller.Token);
+
+
+            }
+            catch (OperationCanceledException)
+            {
+
+                Trace.WriteLine("请求已取消");
+            }
+            catch (Exception ex)
+            {
+                _requestCanceller?.Cancel();
+                _requestCanceller = null;
+                OnPropertyChanged(nameof(IsRequestStarted));
+                if (CurrentResponseContent != null)
+                {
+                    _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        var finalMessage = new MessageContent(this)
+                        {
+                            Role = CurrentResponseContent.Role,
+                            Content = CurrentResponseContent.Content
+                        };
+
+                        var lastMessage = CurrentConversations.LastOrDefault();
+                        lastMessage.Content = ex.Message;
+                        if (lastMessage?.Role == "assistant")
+                        {
+                            CurrentConversations.Remove(lastMessage);
+                        }
+                        CurrentConversations.Add(finalMessage);
+                    });
+                }
+
+                Trace.WriteLine(ex);
+            }
+            finally
+            {
+                _requestCanceller?.Dispose();
+                _requestCanceller = null;
+                OnPropertyChanged(nameof(IsRequestStarted));
+            }
+        }
+
+        private async Task ProcessResponseStream(Stream stream, CancellationToken ct)
+        {
+
+            using var reader = new StreamReader(stream);
+            var buffer = new char[ReadBufferSize];
+
+            while (!reader.EndOfStream && !ct.IsCancellationRequested)
+            {
+                var readCount = await reader.ReadAsync(buffer, 0, buffer.Length);
+                if (readCount == 0) continue;
+
+                _dataBuffer.Append(buffer, 0, readCount);
+                ProcessBufferChunks();
+            }
+            // 确保最后一条消息被正确保存
+            if (CurrentResponseContent != null)
+            {
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    var finalMessage = new MessageContent(this)
+                    {
+                        Role = CurrentResponseContent.Role,
+                        Content = CurrentResponseContent.Content
+                    };
+
+                    var lastMessage = CurrentConversations.LastOrDefault();
+                    if (lastMessage?.Role == "assistant")
+                    {
+                        CurrentConversations.Remove(lastMessage);
+                    }
+                    CurrentConversations.Add(finalMessage);
+                });
+            }
+        }
+
+        private void ProcessBufferChunks()
+        {
+            //var buffer = _dataBuffer.ToString();
+            //var processedLength = 0;
+
+            //while (true)
+            //{
+            //    var dataStart = buffer.IndexOf("data: ", processedLength);
+            //    if (dataStart == -1) break;
+
+            //    var dataEnd = buffer.IndexOf("\n\n", dataStart, StringComparison.Ordinal);
+            //    if (dataEnd == -1) break;
+
+            //    var eventData = buffer.Substring(
+            //        dataStart + "data: ".Length,
+            //        dataEnd - dataStart - "data: ".Length
+            //    );
+
+            //    ProcessSingleEvent(eventData);
+            //    processedLength = dataEnd + 2;
+            //}
+
+            //_dataBuffer.Remove(0, processedLength);
+            var buffer = _dataBuffer.ToString();
+            var processedLength = 0;
+
+            while (true)
+            {
+                var dataStart = buffer.IndexOf("data: ", processedLength);
+                if (dataStart == -1) break;
+
+                var dataEnd = buffer.IndexOf("\n\n", dataStart, StringComparison.Ordinal);
+                if (dataEnd == -1) break;
+
+                var eventData = buffer.Substring(
+                    dataStart + "data: ".Length,
+                    dataEnd - dataStart - "data: ".Length
+                );
+
+                ProcessSingleEvent(eventData);
+                processedLength = dataEnd + 2;
+
+                // 立即处理而不是累积所有事件
+                _dataBuffer.Remove(0, processedLength);
+                buffer = _dataBuffer.ToString();
+                processedLength = 0;
+            }
+
+            _dataBuffer.Remove(0, processedLength);
+        }
+
+        private void ProcessSingleEvent(string eventData)
+        {
+            if (string.IsNullOrWhiteSpace(eventData) || eventData == "[DONE]")
+                return;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(eventData, _jsonOptions);
+                var delta = GetDeltaContent(doc);
+                UpdateResponseContent(delta);
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine($"JSON解析失败: {ex.Message}");
+                Trace.WriteLine($"原始数据: {eventData}");
+            }
+        }
+
+        private string? GetDeltaContent(JsonDocument doc)
+        {
+            try
+            {
+                return doc.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("delta")
+                    .GetProperty("content")
+                    .GetString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void UpdateResponseContent(string? delta)
+        {
+            if (string.IsNullOrEmpty(delta)) return;
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (CurrentResponseContent == null)
+                {
+                    CurrentResponseContent = new MessageContent(this)
+                    {
+                        Role = "assistant",
+                        Content = delta
+                    };
+                    CurrentConversations.Add(CurrentResponseContent);
+                }
+                else
+                {
+                    CurrentResponseContent.AppendContent(delta);
+                }
+
+                // 强制UI立即刷新
+                CommandManager.InvalidateRequerySuggested();
+            }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+
+        #endregion
+
+        #region Context Management
+        private List<MessageContent> TrimContext(List<MessageContent> messages)
+        {
+            var totalLength = messages.Sum(m => m.Content?.Length ?? 0);
+            while (totalLength > MaxContextLength && messages.Count > 1)
+            {
+                messages.RemoveAt(0);
+                totalLength = messages.Sum(m => m.Content?.Length ?? 0);
+            }
+            return messages;
+        }
+
+        private void SaveConversation(MessageContent input)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                CurrentConversations.Add(input);
+            });
+        }
+        #endregion
+
+        #region Helper Methods
+
+        public List<Dictionary<string, List<MessageContent>>> GetConversationHistory()
+        {
+            return _userInfoDb.GetCollection<Dictionary<string, List<MessageContent>>>
+                ("CommunicateHistories").Query().ToList();
+        }
 
         public void SaveAndClearConversations()
         {
-            var histories = UserInfoDB.GetCollection<Dictionary<string,List<MessageContent>>>
-                ("CommunicateHistories").Query().ToList();
+            var histories = GetConversationHistory();
 
             var currentKey = DateTime.Now.ToString();
-            foreach(var itr in histories)
+            foreach (var itr in histories)
             {
-                itr.Add(currentKey,CurrentConversations.ToList());
+                itr.Add(currentKey, CurrentConversations.ToList());
             }
 
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -131,302 +449,204 @@ namespace DesktopTimer.Models.DeepSeek
 
             CurrentInputingContent.Content = "";
 
+            _userInfoDb.GetCollection<Dictionary<string, List<MessageContent>>>
+                ("CommunicateHistories").Update(histories);
 
+            HistoryConversations = GetConversationHistory();
+        }
+
+        public void LoadHistory()
+        {
+            var collection = GetConversationHistory();
+            HistoryConversations = collection ?? new List<Dictionary<string, List<MessageContent>>>();
         }
 
 
-        public void BuildConversationHistories()
+        public void OnHistorySelected()
         {
-
-            System.Windows.Application.Current.Dispatcher.Invoke(() => 
+            if (SelectedHistory != null)
             {
-                HistoryConversations.Clear();
-            });
-
-            var histories = UserInfoDB.GetCollection<Dictionary<string, List<MessageContent>>>
-                ("CommunicateHistories").Query().ToList();
-
-            foreach(var itr in histories)
-            {
-                foreach(var key in itr.Keys)
+                SaveAndClearConversations();
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        HistoryConversations.Add(key);
-                    });
-                }
-            }
-
-        }
-
-
-        DSRequestBody BuildRequest(MessageContent currentInputingContent)
-        {
-            DSRequestBody curRequest = new DSRequestBody();
-            curRequest.max_tokens = MaxToken;
-            curRequest.stream = true;
-            var currentConversation = CurrentConversations.ToList();
-            foreach(var itr in currentConversation) 
-            {
-                curRequest.messageContents.Add(itr);
-            }
-            return curRequest;
-        }
-
-
-        public async void SendRequest(MessageContent currentInputingContent)
-        {
-            if(requestCanceller!=null)
-            {
-                return;
-            }
-            try
-            {
-
-                requestCanceller = new CancellationTokenSource();
-                OnPropertyChanged("IsRequestStarted");
-                var currentRequestBody = BuildRequest(currentInputingContent);
-                var token = currentModelInsatnce?.Config.UserConfigData.DeepSeekApiAuthKey;
-                var responseStream = await  APIUrl
-                    .WithHeader("Accept", "application/json")
-                    .WithOAuthBearerToken(token)
-                    .PostJsonAsync(currentRequestBody,cancellationToken: requestCanceller.Token)
-                    .ReceiveStream();
-
-
-                if (requestCanceller.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                var buffer = new byte[4096];
-                int bytesRead;
-                StringBuilder stringBuilder = new StringBuilder();  
-                while ((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length, requestCanceller.Token)) > 0)
-                {
-                    if(requestCanceller.IsCancellationRequested)
-                        return;
-                    string content = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    if (content == "data: [DONE]")
-                    {
-                        break;
-                    }
-                    var obj = JsonObject.Parse(content);
-                    if (obj!=null&&obj["data"]!=null)
-                    {
-                        var response = JsonSerializer.Deserialize<DSResponseBody>(obj["data"]?.ToString()??"");
-                        stringBuilder.Append(response?.choices?.Select(x=>x?.delta?.Content)?.Aggregate<string?>((e, o) => $"{e}{o}"));
-                    }
-                    CurrentResponseContent.Content = stringBuilder.ToString();
-                }
-                //record current conversation
-                var userContent = new MessageContent(currentInputingContent);
-
-                var systemContent = new MessageContent(CurrentResponseContent);
-
-                System.Windows.Application.Current.Dispatcher.Invoke(() => 
-                {
-                    CurrentConversations.Add(userContent);
-                    CurrentConversations.Add(systemContent);
+                    CurrentConversations = new ObservableCollection<MessageContent>(SelectedHistory.FirstOrDefault().Value);
                 });
-
             }
-            catch(OperationCanceledException)
-            {
-                Trace.WriteLine("request canceled");
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex);
-            }
-            finally
-            {
-                requestCanceller = null;
-                OnPropertyChanged("IsRequestStarted");
-                semaphore.Release();
-            }
-          
         }
 
 
-        public async void CancelCurrentRequest()
+        public void CancelCurrentRequest()
         {
-            requestCanceller?.Cancel();
-            if (requestCanceller != null)
-            {
-                await semaphore.WaitAsync();
-            }
+            _requestCanceller?.Cancel();
         }
 
+        public void Dispose()
+        {
+            _requestCanceller?.Dispose();
+            _userInfoDb.Dispose();
+        }
         #endregion
-
     }
 
+    #region Configuration Classes
+    public class DeepSeekConfig : ObservableObject
+    {
+        private List<string> models = new List<string>() { "deepseek-chat", "deepseek-reasoner" };
 
-    #region requestDefination
+        public List<string> Models
+        {
+            get => models;
+        }
+
+        private string model = "deepseek-reasoner";
+        public string Model
+        {
+            get => model;
+            set => SetProperty(ref model, value);
+        }
+        public float Temperature { get; set; } = 1.0f;
+        public int MaxHistoryMessages { get; set; } = 10;
+    }
+
     public class DSRequestBody
     {
-        /// <summary>
-        /// 对话的消息列表,lenth >=1
-        /// </summary>
-        public List<MessageContent> messageContents = new List<MessageContent>();
+        [JsonPropertyName("messages")]
+        public List<MessageContent> Messages { get; set; } = new();
 
-        public string model { set;get;} = "deepseek-chat";
+        [JsonPropertyName("model")]
+        public string Model { get; set; } = "deepseek-chat";
 
-        /// <summary>
-        /// 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其在已有文本中的出现频率受到相应的惩罚，降低模型重复相同内容的可能性。
-        /// </summary>
-        public int? frequency_penalty { set;get;} = 0;
-        /// <summary>
-        /// 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。
-        /// </summary>
-        public int? presence_penalty { set;get; } = 0;
-        /// <summary>
-        /// 限制一次请求中模型生成 completion 的最大 token 数。输入 token 和输出 token 的总长度受模型的上下文长度的限制。
-        /// </summary>
-        public int? max_tokens { set;get;} = 0;
-        /// <summary>
-        /// 一个 object，指定模型必须输出的格式。
-        /// </summary>
-        public ResponseFormat? response_format { set;get;} = new ResponseFormat();
+        [JsonPropertyName("frequency_penalty")]
+        public float? FrequencyPenalty { get; set; }
 
-        /// <summary>
-        /// 一个 string 或最多包含 16 个 string 的 list，在遇到这些词时，API 将停止生成更多的 token
-        /// </summary>
-        public string? stop { set;get;} = "DesktopTimerForceStoped";
-        /// <summary>
-        /// 如果设置为 True，将会以 SSE（server-sent events）的形式以流式发送消息增量。消息流以 data: [DONE] 结尾。
-        /// </summary>
-        public bool? stream { set;get;} = false;
-        /// <summary>
-        /// 流式输出相关选项。只有在 stream 参数为 true 时，才可设置此参数。
-        /// </summary>
-        public StreamOption? stream_options { set;get;}
+        [JsonPropertyName("presence_penalty")]
+        public float? PresencePenalty { get; set; }
 
-        /// <summary>
-        /// 采样温度，介于 0 和 2 之间。更高的值，如 0.8，会使输出更随机，而更低的值，如 0.2，会使其更加集中和确定。 
-        /// 我们通常建议可以更改这个值或者更改 top_p，但不建议同时对两者进行修改。
-        /// </summary>
-        public int? temperature { set; get;}  =1;
+        [JsonPropertyName("max_tokens")]
+        public int? MaxTokens { get; set; }
 
-        /// <summary>
-        /// 作为调节采样温度的替代方案，模型会考虑前 top_p 概率的 token 的结果。
-        /// 所以 0.1 就意味着只有包括在最高 10% 概率中的 token 会被考虑。
-        /// 我们通常建议修改这个值或者更改 temperature，但不建议同时对两者进行修改
-        /// </summary>
-        public int? top_p { set; get;} =1;
-        /// <summary>
-        /// 控制模型调用 tool 的行为。
-        /// none 意味着模型不会调用任何 tool，而是生成一条消息。
-        /// auto 意味着模型可以选择生成一条消息或调用一个或多个 tool。
-        /// required 意味着模型必须调用一个或多个 tool。
-        /// 通过 {"type": "function", "function": {"name": "my_function"}}
-        /// 指定特定 tool，会强制模型调用该 tool。
-        /// 当没有 tool 时，默认值为 none。如果有 tool 存在，默认值为 auto。
-        /// </summary>
-        public string? tool_choice { set;get;} = "none";
-        /// <summary>
-        /// 是否返回所输出 token 的对数概率。如果为 true，则在 message 的 content 中返回每个输出 token 的对数概率。
-        /// </summary>
-        public bool? logprobs { set;get;} =false ;
-        /// <summary>
-        /// 一个介于 0 到 20 之间的整数 N，指定每个输出位置返回输出概率 top N 的 token，且返回这些 token 的对数概率。
-        /// 指定此参数时，logprobs 必须为 true。
-        /// </summary>
-        public int? top_logprobs { set; get;} = null;
+        [JsonPropertyName("temperature")]
+        public float? Temperature { get; set; } = 1f;
+
+        [JsonPropertyName("top_p")]
+        public float? TopP { get; set; } = 1f;
+
+        [JsonPropertyName("stream")]
+        public bool? Stream { get; set; }
+
+        [JsonPropertyName("stop")]
+        public string? Stop { get; set; }
     }
 
-    public class StreamOption
+    public class MessageContent : ObservableObject
     {
-        /// <summary>
-        /// 如果设置为 true，在流式消息最后的 data: [DONE] 之前将会传输一个额外的块。
-        /// 此块上的 usage 字段显示整个请求的 token 使用统计信息，而 choices 字段将始终是一个空数组。
-        /// 所有其他块也将包含一个 usage 字段，但其值为 null。
-        /// </summary>
-        public bool include_usage { set;get; } =false;
-    }
 
-    public class ResponseFormat
-    {
-        /// <summary>
-        /// 设置为 json_object 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
-        /// 注意: 使用 JSON 模式时，你还必须通过系统或用户消息指示模型生成 JSON。
-        /// 否则，模型可能会生成不断的空白字符，直到生成达到令牌限制，从而导致请求长时间运行并显得“卡住”。
-        /// 此外，如果 finish_reason = "length"，这表示生成超过了 max_tokens 或对话超过了最大上下文长度，消息内容可能会被部分截断。
-        /// </summary>
-        public string type { set;get;} = "text";
-    }
+        private string uniqueId = "";
+        public string UniqueID
+        {
+            get=> uniqueId;
+            private set=>SetProperty(ref uniqueId,value);
+        }
 
-    public partial class MessageContent : ObservableObject
-    {
-        /// <summary>
-        /// 消息的内容。
-        /// </summary>
-        [ObservableProperty]
-        string? content;
-        /// <summary>
-        /// 该消息的发起角色，其值为 system。
-        /// </summary>
-        [ObservableProperty]
-        string? role;
-        /// <summary>
-        /// 可以选填的参与者的名称，为模型提供信息以区分相同角色的参与者。
-        /// </summary>
-        [ObservableProperty]
-        string? name;
+        DeepSeek? _parent = null;
+        [JsonIgnore]
+        public DeepSeek? Parent
+        {
+            get => _parent;
+        }
+        [JsonIgnore]
+        public bool IsContentEmpty
+        {
+            get => Content?.IsNullOrEmpty() ?? true;
+        }
 
-        public MessageContent() { }
+        private string? _content;
+        [JsonPropertyName("content")] // 明确指定JSON字段名
+        public string? Content
+        {
+            get => _content;
+            set
+            {
+                SetProperty(ref _content, value);
+
+                OnPropertyChanged("IsContentEmpty");
+            }
+        }
+
+        public void NotifyContentChanged()
+        {
+            OnPropertyChanged("Content");
+            OnPropertyChanged("IsContentEmpty");
+        }
+
+        private string? _name;
+        [JsonPropertyName("name")]
+        public string? Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+
+
+        private string? _role;
+        [JsonPropertyName("role")]
+        public string? Role
+        {
+            get => _role;
+            set => SetProperty(ref _role, value);
+        }
+
+        public MessageContent(DeepSeek parent)
+        {
+            UniqueID = Guid.NewGuid().ToString();
+            _parent = parent;
+        }
 
         public MessageContent(MessageContent other)
         {
-            content = other.content;
-            role = other.role;
-            name = other.name;
+            UniqueID = Guid.NewGuid().ToString();
+            _parent = other.Parent;
+            _content = other.Content;
+            _role = other.Role;
+            _name = other.Name;
+        }
+        public void AppendContent(string delta)
+        {
+            _content += delta;
+            OnPropertyChanged(nameof(Content));
+            OnPropertyChanged(nameof(IsContentEmpty));
         }
 
     }
-    #endregion
-
-    #region responseDefination
 
     public class DSResponseBody
     {
-        public string? id { set;get;}
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
 
-        public long created { set;get;}
-        public string model { set;get; } = "deepseek-chat";
+        [JsonPropertyName("choices")]
+        public List<ResponseChoice>? Choices { get; set; }
 
-        [JsonPropertyName("object")]
-        public string _object {set;get;} = "chat.completion.chunk";
-
-        public string system_fingerprint { set;get;} = "";
-
-        public List<ResponseChoice?>? choices { set;get; }
-
-        public ResponseUsage? usage { set;get;}
+        [JsonPropertyName("usage")]
+        public ResponseUsage? Usage { get; set; }
     }
 
     public class ResponseChoice
     {
-        public MessageContent? delta { set;get; }
-        /// <summary>
-        /// 模型停止生成 token 的原因。
-        /// stop：模型自然停止生成，或遇到 stop 序列中列出的字符串。
-        /// length ：输出长度达到了模型上下文长度限制，或达到了 max_tokens 的限制。
-        /// content_filter：输出内容因触发过滤策略而被过滤。
-        /// insufficient_system_resource: 由于后端推理资源受限，请求被打断。
-        /// </summary>
-        public string? finish_reason { set;get;} 
-
-        public int index { set;get; }
+        [JsonPropertyName("delta")]
+        public MessageContent? Delta { get; set; }
     }
 
     public class ResponseUsage
     {
-        public int completion_tokens { set; get;} = 0;
-        public int prompt_tokens { set;get; } = 0;
+        [JsonPropertyName("completion_tokens")]
+        public int CompletionTokens { get; set; }
 
-        public int total_tokens { set;get; } = 0;
+        [JsonPropertyName("prompt_tokens")]
+        public int PromptTokens { get; set; }
+
+        [JsonPropertyName("total_tokens")]
+        public int TotalTokens { get; set; }
     }
     #endregion
 }

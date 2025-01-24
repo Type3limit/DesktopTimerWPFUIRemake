@@ -230,7 +230,7 @@
                             </TextBlock.Triggers>
                         </TextBlock>
 
-                        <ui:CardExpander Header="翻译相关项">
+                        <ui:CardExpander Margin="0,5" Header="翻译相关项">
                             <StackPanel>
                                 <StackPanel Margin="0,5" Orientation="Horizontal">
                                     <TextBlock Style="{StaticResource labelTextBlock}" Text="百度翻译API:" />
@@ -262,15 +262,28 @@
 
                                 </StackPanel>
 
-                                <ui:Button Command="{Binding Config.SaveTranslateConfigCommand}" Content="保存" />
-                                <ui:Button
-                                    Margin="10,0"
-                                    Command="{Binding Config.ResetTranslateConfigCommand}"
-                                    Content="重置" />
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <ui:Button Command="{Binding Config.SaveTranslateConfigCommand}" Content="保存" />
+                                    <ui:Button
+                                        Margin="5,0"
+                                        Command="{Binding Config.ResetTranslateConfigCommand}"
+                                        Content="重置" />
+                                </StackPanel>
+
                             </StackPanel>
 
                         </ui:CardExpander>
 
+                        <ui:CardExpander Margin="0,5" Header="DeepSeekAI相关项">
+                            <StackPanel>
+                                <StackPanel Margin="0,5" Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource labelTextBlock}" Text="DeepSeek key:" />
+                                    <ui:TextBox Text="{Binding Config.UserConfigData.DeepSeekApiAuthKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <ui:Button Command="{Binding Config.SaveUserConfigCommand}" Content="保存" />
+                            </StackPanel>
+                        </ui:CardExpander>
                     </StackPanel>
 
 

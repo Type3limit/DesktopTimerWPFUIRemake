@@ -5,6 +5,7 @@ using DesktopTimer.Helpers;
 using DesktopTimer.models.displayModel;
 using DesktopTimer.Models;
 using DesktopTimer.Models.BackgroundWorkingModel;
+using DesktopTimer.Models.DeepSeek;
 using DesktopTimer.Models.Everything;
 using DesktopTimer.Views.Models;
 using System;
@@ -53,6 +54,13 @@ namespace DesktopTimer.Models
         public EverythingWrapper EverythingSearch
         {
             get=> everythingSearch ?? (everythingSearch =new EverythingWrapper(this));
+        }
+
+
+        private DesktopTimer.Models.DeepSeek.DeepSeek? deepSeekModel = null;
+        public DesktopTimer.Models.DeepSeek.DeepSeek DeepSeekModel
+        {
+            get => deepSeekModel ?? (deepSeekModel = new DesktopTimer.Models.DeepSeek.DeepSeek(this,new DeepSeekConfig()));
         }
 
         private LocalConfig? config =  null;

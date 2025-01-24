@@ -1,80 +1,252 @@
-﻿<ui:FluentWindow
-    x:Class="DesktopTimer.Views.Window.Conversation.DeepSeekConversation"
+﻿<fluent:FluentWindow
+    x:Class="DesktopTimer.Views.DeepSeekChatWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:con="clr-namespace:DesktopTimer.Views.Controls"
+    xmlns:cef="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:DesktopTimer.Views.Window.Conversation"
+    xmlns:fluent="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:local="clr-namespace:DesktopTimer.Views"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
     xmlns:model="clr-namespace:DesktopTimer.Models.DeepSeek"
-    xmlns:tool="comm"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="DeepSeekConversation"
-    Width="800"
-    Height="450"
-    d:DataContext="{d:DesignInstance Type={x:Type model:DeepSeek}}"
-    mc:Ignorable="d">
+    xmlns:ww2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+    Title="DeepSeek Chat"
+    Width="1280"
+    Height="720"
+    WindowStartupLocation="CenterScreen">
+
     <Window.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/Views/Styles/ImageSource.xaml" />
-            </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.MergedDictionaries />
+            <!--  角色颜色转换器  -->
+            <model:RoleToBrushConverter x:Key="RoleToBrushConverter" />
+            <model:BoolToReverseVisibilityConverter x:Key="BoolReVisi" />
+            <!--  按钮状态转换器  -->
+            <model:BusyStateConverter x:Key="BusyStateConverter" />
+            <model:MarkdownToFlowDocumentConverter x:Key="MarkdownConverter" />
+            <model:MarkdownToHtmlConverter x:Key="MarkdownToHtmlConverter" />
+            <model:DoubleHalfConverter x:Key="HalfConvet" />
+            <model:RoleToAlignmentConverter x:Key="RoleToAlignmentConverter" />
+            <Style x:Key="AnimatedTextBlock" TargetType="TextBlock">
+                <Setter Property="OpacityMask">
+                    <Setter.Value>
+                        <RadialGradientBrush Center=".5,.5" GradientOrigin=".5,.5" RadiusX=".43" RadiusY="2">
+                            <GradientStop Color="Black" />
+                            <GradientStop Offset=".5" Color="#F000" />
+                            <GradientStop Offset="1" Color="#4000" />
+                        </RadialGradientBrush>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Visibility, RelativeSource={RelativeSource Self}}" Value="Visible">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard Name="movePointBoard">
+                                <Storyboard>
+                                    <!--  通过属性路径直接绑定到OpacityMask的渐变属性  -->
+                                    <PointAnimation
+                                        RepeatBehavior="Forever"
+                                        Storyboard.TargetProperty="OpacityMask.(RadialGradientBrush.Center)"
+                                        From="-2,0.5"
+                                        To="3,0.5"
+                                        Duration="0:0:3.3" />
+                                    <PointAnimation
+                                        RepeatBehavior="Forever"
+                                        Storyboard.TargetProperty="OpacityMask.(RadialGradientBrush.GradientOrigin)"
+                                        From="-2,0.5"
+                                        To="3,0.5"
+                                        Duration="0:0:3.3" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                        <DataTrigger.ExitActions>
+                            <StopStoryboard BeginStoryboardName="movePointBoard" />
+                        </DataTrigger.ExitActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="45" />
-            <RowDefinition Height="3*" />
-            <RowDefinition Height="*" />
+            <RowDefinition />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.2*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Header="DeepSeekAI" />
+        <fluent:TitleBar
+            Title="DeepSeek 会话"
+            Grid.Row="0"
+            Grid.ColumnSpan="2" />
 
+        <!--  历史对话侧边栏  -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="0"
+            BorderBrush="Gray"
+            BorderThickness="1,0,1,0">
 
-        <ui:ListView Grid.Row="1" ItemsSource="{Binding CurrentConversations, UpdateSourceTrigger=PropertyChanged}">
-            <ui:ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel IsItemsHost="True" />
-                </ItemsPanelTemplate>
-            </ui:ListView.ItemsPanel>
+            <StackPanel>
+                <Grid Margin="10" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+                    <fluent:TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        Text="模型：" />
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding Config.Models, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding Config.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock
+                                    Text="{Binding}"
+                                    TextTrimming="CharacterEllipsis"
+                                    ToolTip="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+                <fluent:Button
+                    Margin="10"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding StartNewConversationCommand}"
+                    Content="新建对话" />
+                <fluent:TextBlock
+                    Margin="10"
+                    FontSize="16"
+                    Text="历史会话：" />
 
-            <ui:ListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="3*" />
-                        </Grid.ColumnDefinitions>
-                    </Grid>
-
-
-                </DataTemplate>
-            </ui:ListView.ItemTemplate>
-
-        </ui:ListView>
+                <fluent:ListView
+                    MinHeight="30"
+                    Margin="5"
+                    VerticalAlignment="Stretch"
+                    BorderBrush="DimGray"
+                    BorderThickness="1"
+                    DisplayMemberPath="Key"
+                    ItemsSource="{Binding HistoryConversations}"
+                    SelectedItem="{Binding SelectedHistory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </Border>
 
         <GridSplitter
             Grid.Row="1"
-            Height="1"
-            VerticalAlignment="Bottom"
-            ResizeDirection="Rows" />
+            Grid.Column="0"
+            Width="2"
+            HorizontalAlignment="Right"
+            Background="DimGray"
+            ResizeBehavior="CurrentAndNext" />
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="50" />
-            </Grid.ColumnDefinitions>
-            <ui:TextBox
-                Grid.Column="0"
-                PreviewKeyDown="TextBox_PreviewKeyDown"
-                Text="{Binding CurrentInputingContent.Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <!--  主聊天区域  -->
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <ui:Button
-                Grid.Column="1"
-                Command="{Binding StartCompletionsCommand}"
-                Icon="{ui:SymbolIcon Symbol=ArrowUp48}" />
+            <!--  消息列表  -->
+            <fluent:DynamicScrollViewer
+                Grid.Row="0"
+                CanContentScroll="True"
+                ScrollChanged="ScrollViewer_ScrollChanged"
+                VerticalScrollBarVisibility="Auto">
+                <fluent:VirtualizingItemsControl ItemsSource="{Binding CurrentConversations}">
+                    <fluent:VirtualizingItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel CanVerticallyScroll="True" />
+                        </ItemsPanelTemplate>
+                    </fluent:VirtualizingItemsControl.ItemsPanel>
+                    <fluent:VirtualizingItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type model:MessageContent}">
+                            <!--  新增外层Grid用于占满可用宽度  -->
+                            <Grid HorizontalAlignment="Stretch">
+                                <Border
+                                    x:Name="Border"
+                                    MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource HalfConvet}}"
+                                    Margin="15,5,15,5"
+                                    Padding="10,5"
+                                    HorizontalAlignment="{Binding Role, Converter={StaticResource RoleToAlignmentConverter}}"
+                                    Background="{Binding Role, Converter={StaticResource RoleToBrushConverter}}"
+                                    CornerRadius="15">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock
+                                            Grid.Row="0"
+                                            Background="Transparent"
+                                            FontStyle="Oblique"
+                                            Style="{StaticResource AnimatedTextBlock}"
+                                            Text="正在生成..."
+                                            TextWrapping="Wrap"
+                                            Visibility="{Binding IsContentEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <!--<FlowDocumentScrollViewer
+                                            Document="{Binding Content, Converter={StaticResource MarkdownConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                            VerticalScrollBarVisibility="Auto"
+                                            Visibility="{Binding IsContentEmpty, Converter={StaticResource BoolReVisi}}" />-->
+
+
+                                        <ww2:WebView2
+                                            Grid.Row="0"
+                                            HorizontalAlignment="Stretch"
+                                            NavigationCompleted="WebView2_NavigationCompleted"
+                                            Source="{Binding ., Converter={StaticResource MarkdownToHtmlConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                            Visibility="{Binding IsContentEmpty, Converter={StaticResource BoolReVisi}}" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </fluent:VirtualizingItemsControl.ItemTemplate>
+                </fluent:VirtualizingItemsControl>
+            </fluent:DynamicScrollViewer>
+
+            <!--  输入区域  -->
+            <Border
+                Grid.Row="1"
+                Padding="5"
+                Background="Transparent">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <fluent:TextBox
+                        MinHeight="60"
+                        Margin="0,0,5,0"
+                        VerticalAlignment="Center"
+                        AcceptsReturn="True"
+                        KeyDown="InputBox_KeyDown"
+                        Text="{Binding CurrentInputingContent.Content, UpdateSourceTrigger=PropertyChanged}"
+                        TextAlignment="Left"
+                        VerticalScrollBarVisibility="Auto" />
+
+                    <fluent:Button
+                        Grid.Column="1"
+                        Width="80"
+                        Height="60"
+                        Background="CadetBlue"
+                        Command="{Binding StartCompletionsCommand}"
+                        Icon="{fluent:SymbolIcon Symbol=Send28}"
+                        Visibility="{Binding IsRequestStarted, Converter={StaticResource BoolReVisi}}" />
+
+                    <fluent:Button
+                        Grid.Column="1"
+                        Width="80"
+                        Height="60"
+                        Background="CadetBlue"
+                        Command="{Binding StartCompletionsCommand}"
+                        Icon="{fluent:SymbolIcon Symbol=RecordStop28}"
+                        Visibility="{Binding IsRequestStarted, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </Grid>
+            </Border>
         </Grid>
-
     </Grid>
-</ui:FluentWindow>
+</fluent:FluentWindow>

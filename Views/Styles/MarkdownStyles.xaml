@@ -1,0 +1,140 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf">
+
+    <!--  定义颜色资源  -->
+    <Color x:Key="PrimaryBlue">#0078D4</Color>
+    <Color x:Key="DarkGray">#333333</Color>
+    <Color x:Key="LightGray">#F1F1F1</Color>
+    <Color x:Key="DarkBackground">#2D2D2D</Color>
+    <Color x:Key="LightBackground">#FFFFFF</Color>
+    <Color x:Key="AccentRed">#D80073</Color>
+    <Color x:Key="SoftBorder">#B3B3B3</Color>
+
+    <!--  定义刷子资源  -->
+    <SolidColorBrush x:Key="PrimaryBlueBrush" Color="{StaticResource PrimaryBlue}" />
+    <SolidColorBrush x:Key="DarkGrayBrush" Color="{StaticResource DarkGray}" />
+    <SolidColorBrush x:Key="LightGrayBrush" Color="{StaticResource LightGray}" />
+    <SolidColorBrush x:Key="DarkBackgroundBrush" Color="{StaticResource DarkBackground}" />
+    <SolidColorBrush x:Key="LightBackgroundBrush" Color="{StaticResource LightBackground}" />
+    <SolidColorBrush x:Key="AccentRedBrush" Color="{StaticResource AccentRed}" />
+    <SolidColorBrush x:Key="SoftBorderBrush" Color="{StaticResource SoftBorder}" />
+
+    <!--  FlowDocument Base Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.DocumentStyleKey}" TargetType="FlowDocument">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextAlignment" Value="Justify" />
+        <Setter Property="Foreground" Value="{StaticResource LightGrayBrush}" />
+        <Setter Property="LineHeight" Value="1.6" />
+    </Style>
+
+    <!--  Custom Heading Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.Heading1StyleKey}" TargetType="Paragraph">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="Foreground" Value="{StaticResource LightGrayBrush}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Margin" Value="0,20,0,10" />
+    </Style>
+
+    <!--  Custom Code Block Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.CodeBlockStyleKey}" TargetType="Paragraph">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}" />
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource AccentRedBrush}" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Margin" Value="10" />
+    </Style>
+
+    <!--  Custom Table Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.TableStyleKey}" TargetType="Table">
+        <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,1,1" />
+        <Setter Property="CellSpacing" Value="0" />
+        <Setter Property="Margin" Value="0,10" />
+    </Style>
+
+    <!--  Custom Hyperlink Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.HyperlinkStyleKey}" TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBlueBrush}" />
+        <Setter Property="TextDecorations" Value="Underline" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource PrimaryBlueBrush}" />
+                <Setter Property="TextDecorations" Value="None" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  Custom Quote Block Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.QuoteBlockStyleKey}" TargetType="Section">
+        <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="Foreground" Value="{StaticResource AccentRedBrush}" />
+        <Setter Property="Padding" Value="12,8,12,8" />
+        <Setter Property="Margin" Value="15,8" />
+        <Setter Property="Background" Value="{StaticResource LightGrayBrush}" />
+    </Style>
+
+    <!--  Custom List Style (Fluent Design)  -->
+    <Style TargetType="List">
+        <Setter Property="Margin" Value="20,5" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource LightGrayBrush}" />
+    </Style>
+
+    <!--  Custom Thematic Break Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.ThematicBreakStyleKey}" TargetType="Line">
+        <Setter Property="Stroke" Value="{StaticResource PrimaryBlueBrush}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Margin" Value="20,0" />
+        <Setter Property="Opacity" Value="0.3" />
+    </Style>
+
+    <!--  Custom Code Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.CodeStyleKey}" TargetType="Run">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}" />
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="Foreground" Value="{StaticResource AccentRedBrush}" />
+    </Style>
+
+    <!--  Custom Task List Style (Fluent Design)  -->
+    <Style x:Key="{x:Static markdig:Styles.TaskListStyleKey}" TargetType="CheckBox">
+        <Setter Property="Margin" Value="0,0,5,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid>
+                        <Border
+                            Width="16"
+                            Height="16"
+                            Background="{StaticResource LightBackgroundBrush}"
+                            BorderBrush="{StaticResource PrimaryBlueBrush}"
+                            BorderThickness="1"
+                            CornerRadius="2">
+                            <Path
+                                x:Name="CheckMark"
+                                Data="M 3 7 L 6 10 L 11 4"
+                                Stroke="{StaticResource PrimaryBlueBrush}"
+                                StrokeThickness="2"
+                                Visibility="Collapsed" />
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CheckMark" Property="Stroke" Value="{StaticResource PrimaryBlueBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
