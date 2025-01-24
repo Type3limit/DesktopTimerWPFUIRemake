@@ -14,9 +14,9 @@
  >7.支持置顶以及取消  
  >8.支持网页背景
  >9.支持stable diffusion 绘制背景
- >9.支持快速调出翻译窗口
- >10.支持everything查找文件
+ >10.支持快速调出翻译窗口
+ >11.支持everything查找文件
  
 
 ## 效果预览
-  ![预览](./images/preview.GIF)
+  ![预览](./images/preview.gif)
